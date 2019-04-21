@@ -17,7 +17,11 @@
         {
           "name": "SDL2_PATH",
           "value": "C:\\Programming\\SDL2-2.0.8"
-        }
+        },
+        {
+          "name": "SDL2IMAGEDIR",
+          "value": "C:\\Programming\\SDL2_image-2.0.4"
+        }       
       ]
     },
     {
@@ -36,6 +40,14 @@
         {
           "name": "SDL2_PATH",
           "value": "C:\\Programming\\SDL2-2.0.8"
+        },
+        {
+          "name": "SDL2_IMAGE_LIBRARY",
+          "value": "C:\\Programming\\SDL2_image-2.0.4\\lib\\"
+        },
+        {
+          "name": "SDL2_IMAGE_INCLUDE_DIR",
+          "value": "C:\\Programming\\SDL2_image-2.0.4\\include"
         }
       ]
     }
