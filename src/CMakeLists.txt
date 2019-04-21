@@ -9,6 +9,7 @@ find_package(SDL2 REQUIRED COMPONENTS main)
 
 
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2main_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
+
 add_executable(breakout ${SOURCE_FILES})
 target_link_libraries(breakout ${SDL2_LIBS})
 

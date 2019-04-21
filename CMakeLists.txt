@@ -1,9 +1,15 @@
 cmake_minimum_required(VERSION 3.2)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3")
+
+if(MSVC)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+endif(MSVC)
 
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
+
+set(ENTT_DIR ${PROJECT_SOURCE_DIR}/third_party/entt/src)
 
 #set(DIVISIBLE_INSTALL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(DIVISIBLE_INSTALL_BIN_DIR ${PROJECT_SOURCE_DIR}/bin)
@@ -13,7 +19,8 @@ set(DIVISIBLE_INSTALL_BIN_DIR ${PROJECT_SOURCE_DIR}/bin)
 
 #include_directories(${DIVISIBLE_INSTALL_INCLUDE_DIR})
 #include_directories(${DIVISION_HEADERS_DIR})
-
+include_directories(${ENTT_DIR})
+add_subdirectory(third_party)
 add_subdirectory(src)
 
 

@@ -1,3 +1,6 @@
 [submodule "googletest"]
 	path = test/lib/googletest
 	url = https://github.com/google/googletest.git
+[submodule "third_party/entt"]
+	path = third_party/entt
+	url = https://github.com/skypjack/entt.git

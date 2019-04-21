@@ -1,7 +1,9 @@
 #include "SDL.h" 
+#include "entt/entt.hpp"
 
 int main(int argc, char *argv[])
 {
+	auto reg = entt::registry{};
 	SDL_Init(SDL_INIT_VIDEO);
 
 	SDL_Window *window = SDL_CreateWindow(
