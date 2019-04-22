@@ -137,8 +137,6 @@ void draw_string(BitFont& font,std::string str, Vec2i coordinates)
 			GlyphSprite.location = coords + Vec2i{ glyph.xoffset,glyph.yoffset };
 
 			draw_sprite(GlyphSprite, get_main_renderer());
-			
-				
 		}
 	}
 }
