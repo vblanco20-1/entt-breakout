@@ -4,6 +4,7 @@
 #include "components.h"
 #include "sdl_render.h"
 #include "vmath.h"
+#include "bitfont.h"
 
 void transform_sprites(entt::registry &registry)
 {
@@ -273,6 +274,9 @@ int main(int argc, char *argv[])
 	load_sprite("../assets/sprites/ballGrey.png", main_registry.get<SDL_RenderSprite>(ball_entity));
 	main_registry.get<MovementComponent>(ball_entity).velocity = random_vector() * 400;
 
+	BitFont kenney_font;
+	load_font(kenney_font,"../assets/font/kenney_numbers.png", "../assets/font/kenney_numbers.fnt");
+
 	//borders
 	const float bricks_min_x = -WINDOW_WIDTH / 2.f +50;
 	const float bricks_max_x = WINDOW_WIDTH / 2.f -50;
@@ -327,10 +331,10 @@ int main(int argc, char *argv[])
 					case SDLK_DOWN:
 						main_registry.get<PlayerInputComponent>(player_entity).movement_input.y = -1;
 						break;
-					case SDLK_LEFT: 
+					case SDLK_LEFT:
 						main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = -1;
 						break;
-					case SDLK_RIGHT: 
+					case SDLK_RIGHT:
 						main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = 1;
 						break;
 					}
@@ -366,6 +370,10 @@ int main(int argc, char *argv[])
 		process_border_collisions(main_registry);
 
 		transform_sprites(main_registry);
+
+
+
+		draw_string(kenney_font, "1234567890", Vec2i{10,700});
 		draw_sprites_sdl(main_registry);
 		
 		end_frame();

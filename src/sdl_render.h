@@ -39,6 +39,7 @@ bool initialize_sdl();
 void start_frame();
 void end_frame();
 void destroy_sdl();
+SDL_Renderer* get_main_renderer();
 //converts game space (centered) to screen space
 constexpr Vec2i game_space_to_screen_space(Vec2f location) {
 	auto up = (UP * location.y);

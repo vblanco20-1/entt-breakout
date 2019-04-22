@@ -130,3 +130,8 @@ void destroy_sdl()
 	SDL_DestroyWindow(gWindow);
 	SDL_Quit();
 }
+
+SDL_Renderer* get_main_renderer()
+{
+	return gRenderer;
+}
