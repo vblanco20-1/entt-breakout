@@ -96,6 +96,14 @@ bool load_font(BitFont& font, std::string image_path, std::string info_path)
 						glyph.xadvance = param.num;
 						
 					}
+					else if (param.str == "xoffset") {
+						glyph.xoffset = param.num;
+
+					}
+					else if (param.str == "yoffset") {
+						glyph.yoffset = param.num;
+
+					}
 				}
 
 				font.loaded_glyphs[glyph.id] = glyph;
@@ -125,10 +133,11 @@ void draw_string(BitFont& font,std::string str, Vec2i coordinates)
 			GlyphSprite.width = glyph.width;
 			GlyphSprite.texture = glyph.texture;
 			GlyphSprite.texture_rect = glyph.texture_rect;
-			GlyphSprite.location = coords;
+			coords.x += glyph.xadvance;
+			GlyphSprite.location = coords + Vec2i{ glyph.xoffset,glyph.yoffset };
 
 			draw_sprite(GlyphSprite, get_main_renderer());
-			coords.x += glyph.xadvance;
+			
 				
 		}
 	}

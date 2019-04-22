@@ -6,6 +6,7 @@
 #include "vmath.h"
 #include "bitfont.h"
 
+int score = 0;
 void transform_sprites(entt::registry &registry)
 {
 	auto view = registry.view<SDL_RenderSprite,SpriteLocation>();
@@ -177,10 +178,10 @@ void process_ball_collisions(entt::registry &registry) {
 					movement.velocity.x *= -1;
 				}
 
-				
+				score += brickview.get<Brick>(brick).score_value;
 				registry.destroy(brick);
+				
 			}
-
 
 		}
 
@@ -220,24 +221,30 @@ void process_ball_collisions(entt::registry &registry) {
 
 uint32_t build_brick(entt::registry &registry, Vec2f location, int type) {
 	std::string sprite;
+	int score = 1;
 	switch (type)
 	{
 	case 0:
 		sprite = "../assets/sprites/element_yellow_rectangle.png";
+		score = 2;
 		break;
 	case 1:
 		sprite = "../assets/sprites/element_red_rectangle.png";
+		score = 5;
 		break;
 	case 2:
 		sprite = "../assets/sprites/element_purple_rectangle.png";
+		score = 3;
 		break;
 
 	case 3:
 		sprite = "../assets/sprites/element_grey_rectangle.png";
+		score = 1;
 		break;
 	default:
 
 		sprite = "../assets/sprites/element_blue_rectangle.png";
+		score = 4;
 		break;
 	}
 
@@ -246,6 +253,7 @@ uint32_t build_brick(entt::registry &registry, Vec2f location, int type) {
 	auto brick = registry.create();
 	registry.assign<SDL_RenderSprite>(brick);
 	registry.assign<Brick>(brick);
+	registry.get<Brick>(brick).score_value = score;
 	registry.assign<SpriteLocation>(brick, location);
 	load_sprite(sprite, registry.get<SDL_RenderSprite>(brick));
 	return brick;
@@ -373,7 +381,7 @@ int main(int argc, char *argv[])
 
 
 
-		draw_string(kenney_font, "1234567890", Vec2i{10,700});
+		draw_string(kenney_font, "score:" + std::to_string( score), Vec2i{10,750});
 		draw_sprites_sdl(main_registry);
 		
 		end_frame();

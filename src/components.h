@@ -12,6 +12,7 @@ struct Ball {
 };
 struct Brick {
 	int hits_left;
+	int score_value;
 };
 struct MovementComponent {
 	Vec2f acceleration;

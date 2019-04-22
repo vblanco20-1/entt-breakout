@@ -6,6 +6,8 @@ struct SDL_Texture;
 struct SpriteGlyph {
 	int width;
 	int height;
+	int xoffset;
+	int yoffset;
 	char id;
 	int xadvance;
 
