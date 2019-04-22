@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 project(breakout)
 
-set(SOURCE_FILES main.cpp)
+set(SOURCE_FILES main.cpp sdl_render.cpp vmath.cpp)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Find SDL2 and OpenGL
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")

@@ -1,63 +1,10 @@
 #include <SDL.h>
-#include <SDL_image.h>
+
 #include "entt/entt.hpp"
 #include "components.h"
-#include <random>
+#include "sdl_render.h"
+#include "vmath.h"
 
-constexpr int WINDOW_WIDTH = 640;
-constexpr int WINDOW_HEIGHT = 800;
-
-constexpr Vec2i UP{ 0,-1 };
-constexpr Vec2i RIGHT{ 1,0 };
-
-constexpr Vec2i coordinate_center{ WINDOW_WIDTH / 2,WINDOW_HEIGHT - 100 };
-
-SDL_Renderer *gRenderer;
-SDL_Window *gWindow;
-SDL_Texture* gTexture;
-
-SDL_RenderSprite paddle;
-
-Vec2f random_vector() {
-	
-
-	// https://en.cppreference.com/w/cpp/header/random
-	// seed with a constant (constant seed sequence) to get repeatable results
-	static std::mt19937 rng(std::random_device{}());
-
-	std::uniform_real_distribution<float> distribution(-1.0, 1.0);
-
-
-	return Vec2f{distribution(rng), distribution(rng)}.normalized();
-
-}
-
-//converts game space (centered) to screen space
-constexpr Vec2i game_space_to_screen_space(Vec2f location) {	
-	auto up = (UP * location.y);
-	auto right = (RIGHT * location.x);
-	return coordinate_center + up + right;
-}
-
-void draw_sprite(SDL_RenderSprite& sprite, SDL_Renderer*render_target) {
-	if (render_target && sprite.texture)
-	{
-		SDL_Rect renderQuad = sprite.to_rect();
-
-		SDL_RenderCopy(render_target, sprite.texture, &sprite.texture_rect, &renderQuad);
-	}
-}
-
-void draw_sprites_sdl(entt::registry &registry, SDL_Renderer*render_target)
-{
-	auto spriteview = registry.view<SDL_RenderSprite>();
-
-	for (auto et : spriteview)
-	{
-		SDL_RenderSprite &sprite = spriteview.get(et);
-		draw_sprite(sprite, render_target);
-	}
-}
 void transform_sprites(entt::registry &registry)
 {
 	auto view = registry.view<SDL_RenderSprite,SpriteLocation>();
@@ -119,8 +66,8 @@ void process_border_collisions(entt::registry &registry) {
 		
 
 		//grab data from location and sprite info
-		float xloc = location.location.x;
-		float xextent = sprite.width / 2;
+		float xloc = (float)location.location.x;
+		float xextent = sprite.width / 2.f;
 
 		//left edge
 		if (xloc - xextent < min_x)
@@ -270,56 +217,6 @@ void process_ball_collisions(entt::registry &registry) {
 	}
 }
 
-bool load_sprite(std::string path, SDL_RenderSprite& sprite)
-{
-	static std::unordered_map<std::string, SDL_RenderSprite> TextureCache;
-	//The final texture
-	SDL_Texture* newTexture = NULL;
-
-	if (TextureCache.find(path) == TextureCache.end()) {
-		//Load image at specified path
-		SDL_Surface* loadedSurface = IMG_Load(path.c_str());
-		if (loadedSurface == NULL)
-		{
-			printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
-			return false;
-		}
-		else
-		{
-			//Create texture from surface pixels
-			newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
-			if (newTexture == NULL)
-			{
-				printf("Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
-			}
-			else {
-				printf("successful load of sprite %s \n", path.c_str());
-			}
-
-			sprite.texture = newTexture;
-			sprite.texture_rect.x = 0;
-			sprite.texture_rect.y = 0;
-			sprite.texture_rect.w = loadedSurface->w;
-			sprite.texture_rect.h = loadedSurface->h;
-			sprite.height = loadedSurface->h;
-			sprite.width = loadedSurface->w;
-			sprite.location.x = 0;
-			sprite.location.y = 0;
-			TextureCache[path] = sprite;
-			//Get rid of old loaded surface
-			SDL_FreeSurface(loadedSurface);
-			
-		}
-	}
-	else {
-		auto cached_sprite  = TextureCache[path];
-		sprite = cached_sprite;
-		printf("successful load of sprite from cache %s \n", path.c_str());
-	}
-
-	return true;
-	
-}
 uint32_t build_brick(entt::registry &registry, Vec2f location, int type) {
 	std::string sprite;
 	switch (type)
@@ -356,27 +253,8 @@ uint32_t build_brick(entt::registry &registry, Vec2f location, int type) {
 int main(int argc, char *argv[])
 {
 	auto main_registry = entt::registry{};
-
 	
-	SDL_Init(SDL_INIT_VIDEO);
-	
-	gWindow = SDL_CreateWindow(
-		"SDL2Test",
-		SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED,
-		640,
-		800,
-		0
-	);
-
-	//Initialize PNG loading
-	int imgFlags = IMG_INIT_PNG;
-	if (!(IMG_Init(imgFlags) & imgFlags))
-	{
-		printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-	}
-
-	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	initialize_sdl();
 
 	//initialize player
 	auto player_entity = main_registry.create();
@@ -420,8 +298,7 @@ int main(int argc, char *argv[])
 			build_brick(main_registry, loc, type);
 		}
 	}
-	//loadMedia();
-	SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+	
 	bool quit = false;
 	SDL_Event e;
 	//While application is running
@@ -480,8 +357,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		//Clear screen
-		SDL_RenderClear(gRenderer);
+		start_frame();
 
 		process_player_movement(main_registry);
 		move_objects(main_registry, 1.0f / 60.0f);
@@ -490,18 +366,14 @@ int main(int argc, char *argv[])
 		process_border_collisions(main_registry);
 
 		transform_sprites(main_registry);
-		draw_sprites_sdl(main_registry, gRenderer);
+		draw_sprites_sdl(main_registry);
 		
-
-		//Update screen
-		SDL_RenderPresent(gRenderer);
+		end_frame();
+		
 	}
 
-
-	SDL_Delay(3000);
-
-	SDL_DestroyWindow(gWindow);
-	SDL_Quit();
+	destroy_sdl();
+	
 
 	return 0;
 }
