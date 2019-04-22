@@ -33,7 +33,8 @@ Components
 
 
 
-#Libraries
+# Libraries
 * SDL and SDL_Image for rendering: https://www.libsdl.org/
 * EnTT for the ECS framework: https://github.com/skypjack/entt
 * Project made from a CMake template with heavy modification: https://github.com/kigster/cmake-project-template
+* Bitmap font generated from BMFont: http://www.angelcode.com/products/bmfont/
