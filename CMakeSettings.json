@@ -1,13 +1,10 @@
 ﻿{
   "configurations": [
- 
     {
       "name": "x86-Debug",
       "generator": "Ninja",
       "configurationType": "Debug",
-      "inheritEnvironments": [
-        "msvc_x86"
-      ],
+      "inheritEnvironments": [ "msvc_x86" ],
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
       "cmakeCommandArgs": "",
@@ -16,21 +13,21 @@
       "variables": [
         {
           "name": "SDL2_PATH",
-          "value": "C:\\Programming\\SDL2-2.0.8"
+          "value": "K:\\Programming\\SDL2-2.0.8",
+          "type": "STRING"
         },
         {
           "name": "SDL2IMAGEDIR",
-          "value": "C:\\Programming\\SDL2_image-2.0.4"
-        }       
+          "value": "K:\\Programming\\SDL2_image-2.0.4\\",
+          "type": "STRING"
+        }
       ]
     },
     {
       "name": "x86-Release",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",
-      "inheritEnvironments": [
-        "msvc_x86"
-      ],
+      "inheritEnvironments": [ "msvc_x86" ],
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
       "cmakeCommandArgs": "",
@@ -39,15 +36,13 @@
       "variables": [
         {
           "name": "SDL2_PATH",
-          "value": "C:\\Programming\\SDL2-2.0.8"
+          "value": "K:\\Programming\\SDL2-2.0.8",
+          "type": "STRING"
         },
         {
-          "name": "SDL2_IMAGE_LIBRARY",
-          "value": "C:\\Programming\\SDL2_image-2.0.4\\lib\\"
-        },
-        {
-          "name": "SDL2_IMAGE_INCLUDE_DIR",
-          "value": "C:\\Programming\\SDL2_image-2.0.4\\include"
+          "name": "SDL2IMAGEDIR",
+          "value": "K:\\Programming\\SDL2_image-2.0.4\\",
+          "type": "STRING"
         }
       ]
     }
