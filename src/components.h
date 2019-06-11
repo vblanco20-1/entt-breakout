@@ -1,9 +1,6 @@
 #pragma once
 #include "vmath.h"
 
-
-
-
 struct SpriteLocation{
 	Vec2f location;
 };

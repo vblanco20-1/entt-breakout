@@ -6,18 +6,32 @@
 #include "vmath.h"
 #include "bitfont.h"
 
+//holds the observers for the reactive systems of this program
+struct RegistryObservers {
+	entt::observer sprite_transform_observer;
+
+	void initialize(entt::registry& registry) {
+
+		auto sprite_collector = entt::collector.replace<SpriteLocation>().when<SDL_RenderSprite>().group<SpriteLocation,SDL_RenderSprite>();
+		sprite_transform_observer.connect( registry, sprite_collector );
+
+		printf( "initializing observers");
+	}
+};
+
 int score = 0;
 void transform_sprites(entt::registry &registry)
-{
-	auto view = registry.view<SDL_RenderSprite,SpriteLocation>();
+{		
+	int nexecutions = 0;
+	registry.ctx<RegistryObservers>().sprite_transform_observer.each([&registry,&nexecutions](auto et) {
 
-	for (auto et : view)
-	{
-		SDL_RenderSprite &sprite = view.get<SDL_RenderSprite>(et);
-		SpriteLocation &location = view.get<SpriteLocation>(et);
+		SDL_RenderSprite& sprite = registry.get<SDL_RenderSprite>(et);
+		SpriteLocation& location = registry.get<SpriteLocation>(et);
 		Vec2i screenspace = game_space_to_screen_space(location.location);
-		sprite.location = screenspace;
-	}
+		sprite.location = screenspace; 	
+		nexecutions++;
+	});
+	//printf("transform executions %i, \n",nexecutions);
 }
 
 void move_objects(entt::registry &registry, float deltaSeconds) {
@@ -30,7 +44,11 @@ void move_objects(entt::registry &registry, float deltaSeconds) {
 		SpriteLocation &location = view.get<SpriteLocation>(et);
 
 		movement.velocity += movement.acceleration * deltaSeconds;
-		location.location += movement.velocity * deltaSeconds;
+		if (movement.velocity.x != 0.0f || movement.velocity.y != 0.0f) {
+
+			auto newLoc = location.location + movement.velocity * deltaSeconds;
+			registry.replace<SpriteLocation>(et, newLoc);
+		}				
 	}
 }
 
@@ -264,6 +282,11 @@ int main(int argc, char *argv[])
 	auto main_registry = entt::registry{};
 	
 	initialize_sdl();
+
+	main_registry.set<RegistryObservers>();
+
+	main_registry.ctx<RegistryObservers>().initialize(main_registry);
+	
 
 	//initialize player
 	auto player_entity = main_registry.create();
