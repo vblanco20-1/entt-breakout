@@ -109,9 +109,9 @@ void process_border_collisions(entt::registry &registry) {
 		MovementComponent&movement = ballview.get<MovementComponent>(et);
 		//grab data from location and sprite info
 		float xloc = location.location.x;
-		float xextent = sprite.width / 2;
+		float xextent = sprite.width / 2.f;
 		float yloc = location.location.y;
-		float yextent = sprite.height / 2;
+		float yextent = sprite.height / 2.f;
 		//left edge
 		if (xloc - xextent < min_x)
 		{
@@ -153,9 +153,9 @@ void process_ball_collisions(entt::registry &registry) {
 
 		//grab data from location and sprite info
 		const float xloc = location.location.x;
-		const float xextent = sprite.width / 2;
+		const float xextent = sprite.width / 2.f;
 		const float yloc = location.location.y;
-		const float yextent = sprite.height / 2;
+		const float yextent = sprite.height / 2.f;
 
 
 		float ball_max_x = xloc + xextent;

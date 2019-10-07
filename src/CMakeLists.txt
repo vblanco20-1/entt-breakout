@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
-project(breakout)
+
 
 set(SOURCE_FILES main.cpp sdl_render.cpp vmath.cpp bitfont.cpp)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -12,7 +12,7 @@ find_package(SDL2_image REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2main_INCLUDE_DIRS}  ${SDL2_IMAGE_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
 
 add_executable(breakout ${SOURCE_FILES})
-target_link_libraries(breakout ${SDL2_LIBS} ${SDL2_IMAGE_LIBRARIES})
+target_link_libraries(breakout ${SDL2_LIBS} ${SDL2_IMAGE_LIBRARIES} EnTT)
 
 
 # Copy SDL2 DLLs to output folder on Windows
@@ -26,11 +26,3 @@ if(WIN32)
             ${CMAKE_COMMAND} -E copy_if_different ${IMGDLL} $<TARGET_FILE_DIR:breakout>)
     endforeach()
 endif()
-
-
-#find_package(SDL2 REQUIRED)
-#include_directories(${SDL2_INCLUDE_DIRS})
-
-
-
-#install(TARGETS divider DESTINATION ${DIVISIBLE_INSTALL_BIN_DIR})
