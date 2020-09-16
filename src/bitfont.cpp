@@ -60,7 +60,7 @@ bool load_font(BitFont& font, std::string image_path, std::string info_path)
 
 	string line;
 	ifstream myfile(info_path);
-	std::vector<std::string> info_lines;
+	
 	if (myfile.is_open())
 	{
 		while (getline(myfile, line))

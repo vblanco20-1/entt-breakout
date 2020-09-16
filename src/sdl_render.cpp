@@ -72,7 +72,7 @@ bool load_sprite(std::string path, SDL_RenderSprite& sprite)
 	else {
 		auto cached_sprite = TextureCache[path];
 		sprite = cached_sprite;
-		printf("successful load of sprite from cache %s \n", path.c_str());
+		//printf("successful load of sprite from cache %s \n", path.c_str());
 	}
 
 	return true;
@@ -87,8 +87,8 @@ bool initialize_sdl()
 		"SDL2Test",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
-		640,
-		800,
+		WINDOW_WIDTH,
+		WINDOW_HEIGHT,
 		0
 	);
 

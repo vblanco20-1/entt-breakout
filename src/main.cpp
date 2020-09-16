@@ -5,6 +5,8 @@
 #include "sdl_render.h"
 #include "vmath.h"
 #include "bitfont.h"
+#include "animation.h"
+#include "tilemap.h"
 
 int score = 0;
 void transform_sprites(entt::registry &registry)
@@ -17,6 +19,14 @@ void transform_sprites(entt::registry &registry)
 		SpriteLocation &location = view.get<SpriteLocation>(et);
 		Vec2i screenspace = game_space_to_screen_space(location.location);
 		sprite.location = screenspace;
+
+		if (registry.has<RenderScale>(et)) {
+
+			RenderScale& scale = registry.get<RenderScale>(et);
+
+			sprite.width = sprite.texture_rect.w * scale.scale.x;
+			sprite.height = sprite.texture_rect.h * scale.scale.y;
+		}
 	}
 }
 
@@ -220,6 +230,9 @@ void process_ball_collisions(entt::registry &registry) {
 }
 
 uint32_t build_brick(entt::registry &registry, Vec2f location, int type) {
+	
+	//ball
+	auto brick = registry.create();
 	std::string sprite;
 	int score = 1;
 	switch (type)
@@ -227,34 +240,40 @@ uint32_t build_brick(entt::registry &registry, Vec2f location, int type) {
 	case 0:
 		sprite = "../assets/sprites/element_yellow_rectangle.png";
 		score = 2;
+		registry.assign<PlayAnimComponent>(brick, "wogol_run_anim");
 		break;
 	case 1:
 		sprite = "../assets/sprites/element_red_rectangle.png";
+		registry.assign<PlayAnimComponent>(brick, "knight_m_run_anim");
 		score = 5;
 		break;
 	case 2:
 		sprite = "../assets/sprites/element_purple_rectangle.png";
+		registry.assign<PlayAnimComponent>(brick, "elf_m_run_anim");
 		score = 3;
 		break;
 
 	case 3:
 		sprite = "../assets/sprites/element_grey_rectangle.png";
+		registry.assign<PlayAnimComponent>(brick, "necromancer_run_anim");
 		score = 1;
 		break;
 	default:
 
 		sprite = "../assets/sprites/element_blue_rectangle.png";
+		registry.assign<PlayAnimComponent>(brick, "masked_orc_run_anim");
 		score = 4;
 		break;
 	}
 
 
 	//ball
-	auto brick = registry.create();
+	//auto brick = registry.create();
 	registry.assign<SDL_RenderSprite>(brick);
 	registry.assign<Brick>(brick);
 	registry.get<Brick>(brick).score_value = score;
 	registry.assign<SpriteLocation>(brick, location);
+	registry.assign<RenderScale>(brick, Vec2f{ 1.0f,1.0f });
 	load_sprite(sprite, registry.get<SDL_RenderSprite>(brick));
 	return brick;
 }
@@ -266,25 +285,42 @@ int main(int argc, char *argv[])
 	initialize_sdl();
 
 	//initialize player
-	auto player_entity = main_registry.create();
-	main_registry.assign<SDL_RenderSprite>(player_entity);
-	main_registry.assign<PlayerInputComponent>(player_entity);
-	main_registry.assign<SpriteLocation>(player_entity,0.0f,0.0f);
-	main_registry.assign<MovementComponent>(player_entity);
-	load_sprite("../assets/sprites/paddleBlu.png", main_registry.get<SDL_RenderSprite>(player_entity));
+	//auto player_entity = main_registry.create();
+	//main_registry.assign<SDL_RenderSprite>(player_entity);
+	//main_registry.assign<PlayerInputComponent>(player_entity);
+	//main_registry.assign<SpriteLocation>(player_entity,0.0f,0.0f);
+	//main_registry.assign<MovementComponent>(player_entity);
+	//
+	//load_sprite("../assets/sprites/paddleBlu.png", main_registry.get<SDL_RenderSprite>(player_entity));
 
 	//ball
-	auto ball_entity = main_registry.create();
-	main_registry.assign<SDL_RenderSprite>(ball_entity);
-	main_registry.assign<Ball>(ball_entity);
-	main_registry.assign<SpriteLocation>(ball_entity, 0.0f, 100.0f);
-	main_registry.assign<MovementComponent>(ball_entity);
-	load_sprite("../assets/sprites/ballGrey.png", main_registry.get<SDL_RenderSprite>(ball_entity));
-	main_registry.get<MovementComponent>(ball_entity).velocity = random_vector() * 400;
+	//auto ball_entity = main_registry.create();
+	//main_registry.assign<SDL_RenderSprite>(ball_entity);
+	//main_registry.assign<Ball>(ball_entity);
+	//main_registry.assign<PlayAnimComponent>(ball_entity, "tiny_zombie_run_anim");
+	//main_registry.assign<RenderScale>(ball_entity, Vec2f{ 5.0f,5.0f });
+	//main_registry.assign<SpriteLocation>(ball_entity, 0.0f, 100.0f);
+	//main_registry.assign<MovementComponent>(ball_entity);
+	//load_sprite("../assets/sprites/ballGrey.png", main_registry.get<SDL_RenderSprite>(ball_entity));
+	//main_registry.get<MovementComponent>(ball_entity).velocity = random_vector() * 200;
+	//
+	////ball
+	//auto ball_entity2 = main_registry.create();
+	//main_registry.assign<SDL_RenderSprite>(ball_entity2);
+	//main_registry.assign<Ball>(ball_entity2);
+	//main_registry.assign<PlayAnimComponent>(ball_entity2, "ogre_run_anim");
+	//main_registry.assign<RenderScale>(ball_entity2, Vec2f{ 5.0f,5.0f });
+	//main_registry.assign<SpriteLocation>(ball_entity2, 0.0f, 100.0f);
+	//main_registry.assign<MovementComponent>(ball_entity2);
+	//load_sprite("../assets/sprites/ballGrey.png", main_registry.get<SDL_RenderSprite>(ball_entity2));
+	//main_registry.get<MovementComponent>(ball_entity2).velocity = random_vector() * 200;
+
 
 	BitFont kenney_font;
 	load_font(kenney_font,"../assets/font/kenney_numbers.png", "../assets/font/kenney_numbers.fnt");
 
+	main_registry.set<AnimationDatabase>();
+	main_registry.ctx<AnimationDatabase>().load_animations_from_tileinfo("../assets/sprites/rogelike_tilelist.txt", "../assets/sprites/dungeontileset.png");
 	//borders
 	const float bricks_min_x = -WINDOW_WIDTH / 2.f +50;
 	const float bricks_max_x = WINDOW_WIDTH / 2.f -50;
@@ -293,12 +329,12 @@ int main(int argc, char *argv[])
 	const float bricks_min_y = 300;
 	const float bricks_max_y = WINDOW_HEIGHT - 150;
 	 
-	const int ny = 10;
+	const int ny = 8;
 	const int nx = 8;
 
-	for (int y = 0; y <= ny; y++)
+	for (int y = 0; y <= ny; y+=2)
 	{
-		for (int x = 0; x <= nx; x++)
+		for (int x = 0; x <= nx; x+=2)
 		{
 			const float fx = x / float(nx);
 			const float fy = y /float( ny);
@@ -306,8 +342,10 @@ int main(int argc, char *argv[])
 			loc.x = bricks_min_x + ((bricks_max_x - bricks_min_x) *fx);
 			loc.y = bricks_min_y + ((bricks_max_y - bricks_min_y) *fy);
 
-			int type = (x + y) % 4;
-			build_brick(main_registry, loc, type);
+			int type =( (x + y) % 7)%4;
+			auto brick = build_brick(main_registry, loc, type);
+
+			main_registry.assign<TileLocation>(brick,TileLocation{x,y});
 		}
 	}
 	
@@ -333,18 +371,18 @@ int main(int argc, char *argv[])
 					//Adjust the velocity
 					switch (e.key.keysym.sym)
 					{
-					case SDLK_UP:
-						main_registry.get<PlayerInputComponent>(player_entity).movement_input.y = 1;
-						break;
-					case SDLK_DOWN:
-						main_registry.get<PlayerInputComponent>(player_entity).movement_input.y = -1;
-						break;
-					case SDLK_LEFT:
-						main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = -1;
-						break;
-					case SDLK_RIGHT:
-						main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = 1;
-						break;
+						//case SDLK_UP:
+						//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.y = 1;
+						//	break;
+						//case SDLK_DOWN:
+						//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.y = -1;
+						//	break;
+						//case SDLK_LEFT:
+						//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = -1;
+						//	break;
+						//case SDLK_RIGHT:
+						//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = 1;
+						//	break;
 					}
 				}
 				else if (e.type == SDL_KEYUP)
@@ -352,18 +390,18 @@ int main(int argc, char *argv[])
 					//Adjust the velocity
 					switch (e.key.keysym.sym)
 					{
-					case SDLK_UP:
-						main_registry.get<PlayerInputComponent>(player_entity).movement_input.y = 0;
-						break;
-					case SDLK_DOWN:
-						main_registry.get<PlayerInputComponent>(player_entity).movement_input.y = 0;
-						break;
-					case SDLK_LEFT:
-						main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = 0;
-						break;
-					case SDLK_RIGHT:
-						main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = 0;
-						break;
+					//case SDLK_UP:
+					//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.y = 0;
+					//	break;
+					//case SDLK_DOWN:
+					//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.y = 0;
+					//	break;
+					//case SDLK_LEFT:
+					//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = 0;
+					//	break;
+					//case SDLK_RIGHT:
+					//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.x = 0;
+					//	break;
 					}
 				}
 			}
@@ -371,17 +409,21 @@ int main(int argc, char *argv[])
 
 		start_frame();
 
-		process_player_movement(main_registry);
-		move_objects(main_registry, 1.0f / 60.0f);
+		//process_player_movement(main_registry);
+		//move_objects(main_registry, 1.0f / 60.0f);
 
-		process_ball_collisions(main_registry);
-		process_border_collisions(main_registry);
+		//process_ball_collisions(main_registry);
+		//process_border_collisions(main_registry);
 
+
+		update_animations(main_registry);
 		transform_sprites(main_registry);
 
 
 
 		draw_string(kenney_font, "score:" + std::to_string( score), Vec2i{10,750});
+		
+		update_tilemap(main_registry);
 		draw_sprites_sdl(main_registry);
 		
 		end_frame();

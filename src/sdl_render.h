@@ -4,13 +4,13 @@
 #include "SDL_rect.h"
 #include <string>
 
-constexpr int WINDOW_WIDTH = 640;
-constexpr int WINDOW_HEIGHT = 800;
+constexpr int WINDOW_WIDTH = 800;
+constexpr int WINDOW_HEIGHT = 600;
 
 constexpr Vec2i UP{ 0,-1 };
 constexpr Vec2i RIGHT{ 1,0 };
 
-constexpr Vec2i coordinate_center{ WINDOW_WIDTH / 2,WINDOW_HEIGHT - 100 };
+constexpr Vec2i coordinate_center{ 0,WINDOW_HEIGHT};
 
 struct SDL_Renderer;
 struct SDL_Window;

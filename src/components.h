@@ -7,6 +7,9 @@
 struct SpriteLocation{
 	Vec2f location;
 };
+struct RenderScale {
+	Vec2f scale;
+};
 struct Ball {
 	int num_bounces;
 };
