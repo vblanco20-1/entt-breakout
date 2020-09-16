@@ -92,6 +92,7 @@ void AnimationDatabase::load_animations_from_tileinfo(const std::string& infopat
 
 
 void update_animations(entt::registry& registry) {
+	return;
 	AnimationDatabase& anim_db = registry.ctx<AnimationDatabase>();
 
 	auto create_animview = registry.view<PlayAnimComponent>();

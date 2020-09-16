@@ -3,6 +3,7 @@
 
 
 #include <unordered_map>
+#include "entt/fwd.hpp"
 
 struct SpriteLocation{
 	Vec2f location;
@@ -81,3 +82,13 @@ struct EngineGlobalData {
 	float deltaTime;
 	float timeDilation{ 1.f };
 };
+
+struct Editable {
+	std::string name;
+};
+
+struct OriginalTemplate {
+   std::string ogTemplate;
+};
+
+void stamp_entity(entt::registry& sourcereg, entt::entity sourceEnt, entt::registry& destreg, entt::entity destEnt);

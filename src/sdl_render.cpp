@@ -8,6 +8,7 @@
 #include "examples/imgui_impl_sdl.h"
 #include <iostream>
 #include "components.h"
+#include "compedit.h"
 SDL_Renderer *gRenderer;
 SDL_Window *gWindow;
 
@@ -42,12 +43,17 @@ void draw_ui(entt::registry& registry)
     //    draw_sprite(sprite, gRenderer);
     //}
 
+	ImGui::ShowDemoWindow();
+
 	EngineGlobalData& dty = registry.ctx<EngineGlobalData>();
 
     ImGui::Begin("Test");
     
 	ImGui::Text("DeltaTime: %f ms", dty.deltaTime * 1000.f);
 	ImGui::SliderFloat("Time dilation", &dty.timeDilation, 0, 10);
+	ImGui::Separator();
+
+	display_editor(registry);
     ImGui::End();
 }
 

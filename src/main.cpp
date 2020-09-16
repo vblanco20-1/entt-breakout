@@ -9,7 +9,14 @@
 #include "tilemap.h"
 #include <chrono>
 #include <iostream>
+#include <string_view>
 int score = 0;
+
+struct EntityDatabase {
+	entt::registry databaseRegistry;
+	std::unordered_map<std::string, entt::entity> templateMap;
+};
+
 void transform_sprites(entt::registry &registry)
 {
 	auto view = registry.view<SDL_RenderSprite,SpriteLocation>();
@@ -522,64 +529,163 @@ void build_basic_boss(entt::registry& main_registry)
     }
 }
 
+
+void create_default_templates(EntityDatabase& db) {
+	
+	entt::registry& registry = db.databaseRegistry;
+	//player
+	{
+        //initialize player
+        auto player_entity = registry.create();
+        registry.assign<SDL_RenderSprite>(player_entity);
+        registry.assign<MovementComponent>(player_entity);
+        registry.assign<BulletSpawner>(player_entity);
+        registry.assign<RenderScale>(player_entity, Vec2f{ 0.3f,1.0f });
+        load_sprite("../assets/sprites/paddleBlu.png", registry.get<SDL_RenderSprite>(player_entity));
+		registry.assign<SphereCollider>(player_entity);
+
+		registry.get<SphereCollider>(player_entity).radius = 10;
+
+        BulletSpawner& bspawner = registry.get<BulletSpawner>(player_entity);
+        bspawner.fireRate = 0.15;
+        for (int i = -2; i <= 2; i++) {
+            float angledeg = i * 10 + 90;
+
+            float anglerad = angledeg * 0.01745329252;
+
+            float x = cos(anglerad);
+            float y = sin(anglerad);
+
+            BulletData b0;
+            b0.velocity = Vec2f{ x,y } *800;
+            b0.offset = { 0,0 };
+            bspawner.bullets.push_back(b0);
+        }
+
+		db.templateMap["PLAYER"] = player_entity;
+	}
+
+	//boss
+	{
+        //initialize boss
+        auto boss_entity = registry.create();
+        registry.assign<SDL_RenderSprite>(boss_entity);       
+        registry.assign<BossMovementComponent>(boss_entity);
+        registry.assign<SphereCollider>(boss_entity);
+        registry.assign<RenderScale>(boss_entity, Vec2f{ 5.0f,5.0f });
+        load_sprite("../assets/sprites/element_red_polygon_glossy.png", registry.get<SDL_RenderSprite>(boss_entity));
+        BossMovementComponent& bmov = registry.get<BossMovementComponent>(boss_entity);
+
+		registry.get<SphereCollider>(boss_entity).radius = 100;
+
+        bmov.center.x = 0;
+        bmov.center.y = 700.f;
+        bmov.period = 0.3;
+
+		registry.assign<BulletSpawner>(boss_entity);
+
+        BulletSpawner& bspawner = registry.get<BulletSpawner>(boss_entity);
+        bspawner.fireRate = 0.15;
+        bspawner.type = BulletType::BOSS_01;
+        for (int i = -5; i <= 5; i++) {
+            float angledeg = i * 10 - 90;
+
+            float anglerad = angledeg * 0.01745329252;
+
+            float x = cos(anglerad);
+            float y = sin(anglerad);
+
+            BulletData b0;
+            b0.velocity = Vec2f{ x * 0.5f , y } *800;
+            b0.offset = Vec2f{ x,y } *100;
+            bspawner.bullets.push_back(b0);
+        }
+
+		db.templateMap["BOSS_01"] = boss_entity;
+	}
+
+	//player bullet
+
+	{
+        //ball
+        auto ball_entity = registry.create();
+        registry.assign<SDL_RenderSprite>(ball_entity);
+        registry.assign<Bullet>(ball_entity);
+        registry.assign<PlayAnimComponent>(ball_entity, "tiny_zombie_run_anim");
+        registry.assign<RenderScale>(ball_entity, Vec2f{ 1.0f,1.0f });        
+        registry.assign<MovementComponent>(ball_entity);
+        load_sprite("../assets/sprites/ballGrey.png", registry.get<SDL_RenderSprite>(ball_entity));
+        
+
+        registry.assign<SphereCollider>(ball_entity);
+
+        registry.get<SphereCollider>(ball_entity).radius = 10;
+
+        registry.get<Bullet>(ball_entity).bHitBoss = true;
+        registry.get<Bullet>(ball_entity).bHitPlayer = false;
+
+		db.templateMap["BULLET_PLAYER_01"] = ball_entity;
+	}
+	{
+        //ball
+        auto ball_entity = registry.create();
+        registry.assign<SDL_RenderSprite>(ball_entity);
+        registry.assign<Bullet>(ball_entity);
+        registry.assign<RenderScale>(ball_entity, Vec2f{ 1.0f,1.0f });
+        registry.assign<MovementComponent>(ball_entity);
+        load_sprite("../assets/sprites/ballBlue.png", registry.get<SDL_RenderSprite>(ball_entity));
+        registry.assign<SphereCollider>(ball_entity);
+
+        registry.get<SphereCollider>(ball_entity).radius = 10;
+
+        registry.get<Bullet>(ball_entity).bHitBoss = false;
+        registry.get<Bullet>(ball_entity).bHitPlayer = true;
+
+		db.templateMap["BULLET_BOSS_01"] = ball_entity;
+	}
+}
+
+bool apply_template(std::string_view template_name, EntityDatabase& db, entt::registry& dest_reg, entt::entity dest_et) {
+
+	if (db.templateMap.find(std::string{ template_name }) == db.templateMap.end()) {
+		return false;
+	}
+	else {
+
+		stamp_entity(db.databaseRegistry, db.templateMap[std::string{ template_name }], dest_reg, dest_et);
+
+		dest_reg.assign_or_replace<OriginalTemplate>(dest_et, std::string{ template_name });
+		return true;
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	auto main_registry = entt::registry{};
 	
 	initialize_sdl();
 
+	main_registry.set<EntityDatabase>();
+	EntityDatabase& db = main_registry.ctx<EntityDatabase>();
+	create_default_templates(db);
+
 	//initialize player
 	auto player_entity = main_registry.create();
-	main_registry.assign<SDL_RenderSprite>(player_entity);
-	main_registry.assign<PlayerInputComponent>(player_entity);
-	main_registry.assign<SpriteLocation>(player_entity,0.0f,0.0f);
-	main_registry.assign<MovementComponent>(player_entity);
-	main_registry.assign<BulletSpawner>(player_entity);
-	main_registry.assign<RenderScale>(player_entity, Vec2f{ 0.3f,1.0f });
-	load_sprite("../assets/sprites/paddleBlu.png", main_registry.get<SDL_RenderSprite>(player_entity));
-	main_registry.assign<SphereCollider>(player_entity);
+	//main_registry.assign<SDL_RenderSprite>(player_entity);
+	
 
-	main_registry.get<SphereCollider>(player_entity).radius = 10;
+	apply_template("PLAYER", db, main_registry, player_entity);
+    main_registry.assign<PlayerInputComponent>(player_entity);
+    main_registry.assign<SpriteLocation>(player_entity, 0.0f, 0.0f);
+	main_registry.assign<Editable>(player_entity,"player");
+    //initialize boss
+    auto boss_entity = main_registry.create();
+    main_registry.assign<SpriteLocation>(boss_entity, 0.0f, 700.0f);
 
-	BulletSpawner& bspawner =  main_registry.get<BulletSpawner>(player_entity);
-	bspawner.fireRate = 0.15;
-	for (int i = -2; i <= 2; i++) {
-		float angledeg = i * 10 + 90;
+	apply_template("BOSS_01", db, main_registry, boss_entity);
+	main_registry.assign<Editable>(boss_entity, "boss");
 
-		float anglerad = angledeg * 0.01745329252;
-
-		float x = cos(anglerad);
-		float y = sin(anglerad);
-
-        BulletData b0;
-        b0.velocity = Vec2f{ x,y } * 800;
-        b0.offset = { 0,0 };
-		bspawner.bullets.push_back(b0);
-	}
-
-	build_basic_boss(main_registry);
-
-	////ball
-	//auto ball_entity = main_registry.create();
-	//main_registry.assign<SDL_RenderSprite>(ball_entity);
-	//main_registry.assign<Bullet>(ball_entity);
-	//main_registry.assign<PlayAnimComponent>(ball_entity, "tiny_zombie_run_anim");
-	//main_registry.assign<RenderScale>(ball_entity, Vec2f{ 5.0f,5.0f });
-	//main_registry.assign<SpriteLocation>(ball_entity, 0.0f, 100.0f);
-	//main_registry.assign<MovementComponent>(ball_entity);
-	//load_sprite("../assets/sprites/ballGrey.png", main_registry.get<SDL_RenderSprite>(ball_entity));
-	//main_registry.get<MovementComponent>(ball_entity).velocity = random_vector() * 200;
-	//
-	////ball
-	//auto ball_entity2 = main_registry.create();
-	//main_registry.assign<SDL_RenderSprite>(ball_entity2);
-	//main_registry.assign<Ball>(ball_entity2);
-	//main_registry.assign<PlayAnimComponent>(ball_entity2, "ogre_run_anim");
-	//main_registry.assign<RenderScale>(ball_entity2, Vec2f{ 5.0f,5.0f });
-	//main_registry.assign<SpriteLocation>(ball_entity2, 0.0f, 100.0f);
-	//main_registry.assign<MovementComponent>(ball_entity2);
-	//load_sprite("../assets/sprites/ballGrey.png", main_registry.get<SDL_RenderSprite>(ball_entity2));
-	//main_registry.get<MovementComponent>(ball_entity2).velocity = random_vector() * 200;
+	//build_basic_boss(main_registry);
 
 
 	BitFont kenney_font;
