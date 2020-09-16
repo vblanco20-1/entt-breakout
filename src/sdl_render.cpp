@@ -7,6 +7,7 @@
 #include "imgui_sdl.h"
 #include "examples/imgui_impl_sdl.h"
 #include <iostream>
+#include "components.h"
 SDL_Renderer *gRenderer;
 SDL_Window *gWindow;
 
@@ -29,6 +30,25 @@ void draw_sprites_sdl(entt::registry &registry)
 		SDL_RenderSprite &sprite = spriteview.get(et);
 		draw_sprite(sprite, gRenderer);
 	}
+}
+
+void draw_ui(entt::registry& registry)
+{
+    //auto spriteview = registry.view<SDL_RenderSprite>();
+	//
+    //for (auto et : spriteview)
+    //{
+    //    SDL_RenderSprite& sprite = spriteview.get(et);
+    //    draw_sprite(sprite, gRenderer);
+    //}
+
+	EngineGlobalData& dty = registry.ctx<EngineGlobalData>();
+
+    ImGui::Begin("Test");
+    
+	ImGui::Text("DeltaTime: %f ms", dty.deltaTime * 1000.f);
+	ImGui::SliderFloat("Time dilation", &dty.timeDilation, 0, 10);
+    ImGui::End();
 }
 
 
@@ -130,7 +150,7 @@ bool initialize_sdl()
 	return true;
 }
 
-void start_frame()
+void start_frame(entt::registry& registry)
 {
   
     //Clear screen
@@ -139,30 +159,19 @@ void start_frame()
 	ImGui::NewFrame();
 	
 
-    //static bool show_demo_window = true;
-    //if (show_demo_window)
-    //    ImGui::ShowDemoWindow(&show_demo_window);
-
-	ImGui::Begin("Test");
-		static int frame = 0;
-	ImGui::Text("FrameNumber %i", frame);
-	frame++;
-	if (ImGui::Button("btn"))
-	{
-		std::cout <<  "	BITTOM";
-	}
-		ImGui::End();
-
-        ImGui::Render();
-        ImGuiSDL::Render(ImGui::GetDrawData());
+	draw_ui(registry);
+	
+    ImGui::Render();
+    ImGuiSDL::Render(ImGui::GetDrawData());
+       
 }
 
-void end_frame()
+void end_frame(entt::registry& registry)
 {
    
-    
    
-
+   
+	SDL_RenderFlush(gRenderer);
 	SDL_RenderPresent(gRenderer);
 }
 

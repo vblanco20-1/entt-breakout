@@ -15,6 +15,9 @@ struct Ball {
 };
 struct Bullet {
     int num_bounces;
+
+    bool bHitPlayer : 1;
+    bool bHitBoss : 1;
 };
 struct Brick {
 	int hits_left;
@@ -25,7 +28,14 @@ struct MovementComponent {
 	Vec2f velocity;
 	Vec2f max_velocity;
 };
+struct BossMovementComponent {
 
+	//sine based movement
+	float elapsed{ 0 };
+	float period{ 3 };
+	Vec2f center{ 0,0 };
+	float size{ 200 };
+};
 struct PlayerInputComponent {
 	Vec2f movement_input;
 
@@ -43,13 +53,31 @@ struct PlayerInputComponent {
 struct BulletData {
 	Vec2f offset;
 	Vec2f velocity;
+
+	
+};
+
+enum class BulletType:int {
+	PLAYER_DEFAULT,
+	BOSS_01
 };
 
 struct BulletSpawner {
 	float elapsed = 0.f;
 	float fireRate = 0.1f;
 
-
+	BulletType type{ BulletType::PLAYER_DEFAULT };
 
 	std::vector<BulletData> bullets;
+};
+
+struct SphereCollider {
+	float radius{ 0.f };
+    
+	Vec2f centerOffset  { 0.f,0.f };
+};
+
+struct EngineGlobalData {
+	float deltaTime;
+	float timeDilation{ 1.f };
 };

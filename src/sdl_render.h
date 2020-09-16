@@ -5,7 +5,7 @@
 #include <string>
 #include <SDL.h>
 
-constexpr int WINDOW_WIDTH = 600;
+constexpr int WINDOW_WIDTH = 1400;
 constexpr int WINDOW_HEIGHT = 800;
 
 constexpr Vec2i UP{ 0,-1 };
@@ -34,11 +34,12 @@ struct SDL_RenderSprite {
 void draw_sprite(SDL_RenderSprite& sprite, SDL_Renderer*render_target);
 void draw_sprites_sdl(entt::registry &registry);
 
+void draw_ui(entt::registry& registry);
 bool load_sprite(std::string path, SDL_RenderSprite& sprite);
 
 bool initialize_sdl();
-void start_frame();
-void end_frame();
+void start_frame(entt::registry& registry);
+void end_frame(entt::registry& registry);
 void destroy_sdl();
 
 void process_imgui_event(SDL_Event *event);

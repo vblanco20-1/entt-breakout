@@ -3,6 +3,7 @@ project(minirogue)
 
 file(GLOB SOURCE_FILES    
     "*.cpp"
+     "*.h"
 ) 
 #set(SOURCE_FILES main.cpp sdl_render.cpp vmath.cpp bitfont.cpp animation.cpp)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

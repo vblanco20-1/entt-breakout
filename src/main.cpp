@@ -7,7 +7,8 @@
 #include "bitfont.h"
 #include "animation.h"
 #include "tilemap.h"
-
+#include <chrono>
+#include <iostream>
 int score = 0;
 void transform_sprites(entt::registry &registry)
 {
@@ -43,7 +44,19 @@ void move_objects(entt::registry &registry, float deltaSeconds) {
 		location.location += movement.velocity * deltaSeconds;
 	}
 }
+void process_boss_movement(entt::registry& registry, float deltaSeconds)
+{
+	auto view = registry.view<SpriteLocation, BossMovementComponent>();
 
+	for (auto et : view)
+	{
+		SpriteLocation& loc = view.get<SpriteLocation>(et);
+		BossMovementComponent& bmov = view.get<BossMovementComponent>(et);
+
+		bmov.elapsed += deltaSeconds * bmov.period;
+		loc.location.x = sin(bmov.elapsed) * bmov.size;
+	}
+}
 void process_player_movement(entt::registry &registry) {
 	auto view = registry.view<PlayerInputComponent,MovementComponent>();
 
@@ -103,7 +116,36 @@ entt::entity build_player_bullet(entt::registry& registry, Vec2f velocity, Vec2f
     load_sprite("../assets/sprites/ballGrey.png", registry.get<SDL_RenderSprite>(ball_entity));
 	registry.get<MovementComponent>(ball_entity).velocity = velocity;
 
+    registry.assign<SphereCollider>(ball_entity);
+
+	registry.get<SphereCollider>(ball_entity).radius = 10;
+
+    registry.get<Bullet>(ball_entity).bHitBoss = true;
+    registry.get<Bullet>(ball_entity).bHitPlayer = false;
+
 	return ball_entity;
+}
+
+entt::entity build_boss_bullet(entt::registry& registry, Vec2f velocity, Vec2f location)
+{
+    //ball
+    auto ball_entity = registry.create();
+    registry.assign<SDL_RenderSprite>(ball_entity);
+    registry.assign<Bullet>(ball_entity);
+    //registry.assign<PlayAnimComponent>(ball_entity, "tiny_zombie_run_anim");
+    registry.assign<RenderScale>(ball_entity, Vec2f{ 1.0f,1.0f });
+    registry.assign<SpriteLocation>(ball_entity, location);
+    registry.assign<MovementComponent>(ball_entity);
+    load_sprite("../assets/sprites/ballBlue.png", registry.get<SDL_RenderSprite>(ball_entity));
+    registry.get<MovementComponent>(ball_entity).velocity = velocity;
+
+    registry.assign<SphereCollider>(ball_entity);
+
+    registry.get<SphereCollider>(ball_entity).radius = 10;
+
+	registry.get<Bullet>(ball_entity).bHitBoss = false;
+	registry.get<Bullet>(ball_entity).bHitPlayer = true;
+    return ball_entity;
 }
 
 void process_border_collisions(entt::registry &registry) {
@@ -190,7 +232,13 @@ void spawn_bullets(entt::registry& registry, float deltaSeconds)
 		sprite.elapsed -= deltaSeconds;
 		if (sprite.elapsed < 0) {
 			for (auto b : sprite.bullets) {
-				build_player_bullet(registry, b.velocity, b.offset+ location.location);
+				if (sprite.type == BulletType::PLAYER_DEFAULT) {
+					build_player_bullet(registry, b.velocity, b.offset + location.location);
+				}
+				else if (sprite.type == BulletType::BOSS_01) {
+					build_boss_bullet(registry, b.velocity, b.offset + location.location);
+				}
+				
 			}
 			
 			sprite.elapsed = sprite.fireRate;
@@ -199,15 +247,7 @@ void spawn_bullets(entt::registry& registry, float deltaSeconds)
 }
 
 void process_ball_collisions(entt::registry &registry) {
-	//bullets
-    auto bulletview = registry.view<Bullet, SpriteLocation, MovementComponent>();
-	for (auto et : bulletview)
-    {
-        SpriteLocation& location = bulletview.get<SpriteLocation>(et);
-		if (location.location.y > 1000) {
-			registry.destroy(et);
-		}
-	}
+	
 
 
 	//bounce ball ------------------
@@ -353,7 +393,136 @@ uint32_t build_brick(entt::registry &registry, Vec2f location, int type) {
 	return brick;
 }
 
-int main(int argc, char *argv[])
+void collide_bullets(entt::registry& registry) {
+    //bullets
+    auto bulletview = registry.view<Bullet, SpriteLocation>();
+    for (auto et : bulletview)
+    {
+        SpriteLocation& location = bulletview.get<SpriteLocation>(et);
+        if (location.location.y > 1000 || location.location.y < -1000) {
+            registry.destroy(et);
+        }
+    }
+
+	struct BossCollider {
+		Vec2f center;
+		float radius;
+	};
+
+	struct PlayerCollider {
+		Vec2f center;
+		float radius;
+	};
+
+	std::vector<BossCollider> bosses;
+	std::vector<PlayerCollider> players;
+
+    auto playerview = registry.view<PlayerInputComponent, SpriteLocation, SphereCollider>();
+	for (auto et : playerview)
+	{
+        PlayerCollider pc;
+        pc.center = playerview.get<SpriteLocation>(et).location;
+		pc.center += playerview.get<SphereCollider>(et).centerOffset;
+
+		pc.radius = playerview.get<SphereCollider>(et).radius;
+
+		players.push_back(pc);
+	}
+
+    auto bossview = registry.view<BossMovementComponent, SpriteLocation, SphereCollider>();
+    for (auto et : bossview)
+    {
+		BossCollider pc;
+        pc.center = bossview.get<SpriteLocation>(et).location;
+        pc.center += bossview.get<SphereCollider>(et).centerOffset;
+
+        pc.radius = bossview.get<SphereCollider>(et).radius;
+
+		bosses.push_back(pc);
+    }
+
+    //bullet colliders
+    auto bulletview2 = registry.view<Bullet, SpriteLocation, SphereCollider>();
+    for (auto et : bulletview2)
+    {
+
+		Bullet& bullt = bulletview2.get<Bullet>(et);
+        SpriteLocation& location = bulletview2.get<SpriteLocation>(et);
+		SphereCollider& collider = bulletview2.get<SphereCollider>(et);
+
+		Vec2f center = location.location + collider.centerOffset;
+		float radius = collider.radius;
+
+		if (bullt.bHitBoss) {
+			for (auto c : bosses) {
+
+				Vec2f diff = center - c.center;
+
+				float dist = diff.lenght();
+				if (dist < radius + c.radius) {
+					registry.destroy(et);
+					break;
+				}
+			}
+		}
+		if (bullt.bHitPlayer) {
+            for (auto c : players) {
+
+                Vec2f diff = center - c.center;
+
+                float dist = diff.lenght();
+                if (dist < radius + c.radius) {
+                    registry.destroy(et);
+                    break;
+                }
+            }
+		}
+    }
+
+
+    return;
+}
+
+void build_basic_boss(entt::registry& main_registry)
+{
+	//initialize boss
+	auto boss_entity = main_registry.create();
+	main_registry.assign<SDL_RenderSprite>(boss_entity);
+	main_registry.assign<SpriteLocation>(boss_entity, 0.0f, 700.0f);
+	main_registry.assign<BossMovementComponent>(boss_entity);
+	main_registry.assign<SphereCollider>(boss_entity);
+	main_registry.assign<RenderScale>(boss_entity, Vec2f{ 5.0f,5.0f });
+	load_sprite("../assets/sprites/element_red_polygon_glossy.png", main_registry.get<SDL_RenderSprite>(boss_entity));
+	BossMovementComponent& bmov = main_registry.get<BossMovementComponent>(boss_entity);
+
+	main_registry.get<SphereCollider>(boss_entity).radius = 100;
+
+	bmov.center.x = 0;
+	bmov.center.y = 700.f;
+	bmov.period = 0.3;
+
+    main_registry.assign<BulletSpawner>(boss_entity);
+   
+
+    BulletSpawner& bspawner = main_registry.get<BulletSpawner>(boss_entity);
+    bspawner.fireRate = 0.15;
+	bspawner.type = BulletType::BOSS_01;
+    for (int i = -5; i <= 5; i++) {
+        float angledeg = i * 10 - 90;
+
+        float anglerad = angledeg * 0.01745329252;
+
+        float x = cos(anglerad);
+        float y = sin(anglerad);
+
+        BulletData b0;
+        b0.velocity = Vec2f{ x*0.5f , y } *800;
+        b0.offset = Vec2f{ x,y } * 100;
+        bspawner.bullets.push_back(b0);
+    }
+}
+
+int main(int argc, char* argv[])
 {
 	auto main_registry = entt::registry{};
 	
@@ -368,24 +537,28 @@ int main(int argc, char *argv[])
 	main_registry.assign<BulletSpawner>(player_entity);
 	main_registry.assign<RenderScale>(player_entity, Vec2f{ 0.3f,1.0f });
 	load_sprite("../assets/sprites/paddleBlu.png", main_registry.get<SDL_RenderSprite>(player_entity));
+	main_registry.assign<SphereCollider>(player_entity);
+
+	main_registry.get<SphereCollider>(player_entity).radius = 10;
 
 	BulletSpawner& bspawner =  main_registry.get<BulletSpawner>(player_entity);
+	bspawner.fireRate = 0.15;
+	for (int i = -2; i <= 2; i++) {
+		float angledeg = i * 10 + 90;
 
-	BulletData b0;
-	b0.velocity = { 0,600.f };
-	b0.offset = { 0,0 };
+		float anglerad = angledeg * 0.01745329252;
 
-    BulletData b1;
-    b1.velocity = { 100,600.f };
-    b1.offset = { 0,0 };
+		float x = cos(anglerad);
+		float y = sin(anglerad);
 
-    BulletData b2;
-    b2.velocity = { -100,600.f };
-    b2.offset = { 0,0 };
+        BulletData b0;
+        b0.velocity = Vec2f{ x,y } * 800;
+        b0.offset = { 0,0 };
+		bspawner.bullets.push_back(b0);
+	}
 
-	bspawner.bullets.push_back(b0);
-	bspawner.bullets.push_back(b1);
-	bspawner.bullets.push_back(b2);
+	build_basic_boss(main_registry);
+
 	////ball
 	//auto ball_entity = main_registry.create();
 	//main_registry.assign<SDL_RenderSprite>(ball_entity);
@@ -425,29 +598,24 @@ int main(int argc, char *argv[])
 	const int ny = 8;
 	const int nx = 8;
 
-	//for (int y = 0; y <= ny; y+=2)
-	//{
-	//	for (int x = 0; x <= nx; x+=2)
-	//	{
-	//		const float fx = x / float(nx);
-	//		const float fy = y /float( ny);
-	//		Vec2f loc;
-	//		loc.x = bricks_min_x + ((bricks_max_x - bricks_min_x) *fx);
-	//		loc.y = bricks_min_y + ((bricks_max_y - bricks_min_y) *fy);
-	//
-	//		int type =( (x + y) % 7)%4;
-	//		auto brick = build_brick(main_registry, loc, type);
-	//
-	//		main_registry.assign<TileLocation>(brick,TileLocation{x,y});
-	//	}
-	//}
-	//
+
 	bool quit = false;
 	SDL_Event e;
 	//While application is running
+	main_registry.set<EngineGlobalData>();
+	auto start = std::chrono::system_clock::now();
+	auto end = std::chrono::system_clock::now();
 	while (!quit)
 	{
-		start_frame();
+        end = std::chrono::system_clock::now();
+        auto elapsed =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+		start = std::chrono::system_clock::now();
+		main_registry.ctx<EngineGlobalData>().deltaTime = double(elapsed.count()) / 1000000000.f;
+		//std::cout << "timing is " << double(elapsed.count()) / 1000000.f << std::endl;
+
+		start_frame(main_registry);
+
 		//Handle events on queue
 		while (SDL_PollEvent(&e) != 0)
         {
@@ -479,18 +647,19 @@ int main(int argc, char *argv[])
                         break;
                     case SDLK_SPACE:
                         main_registry.get<PlayerInputComponent>(player_entity).buttonMap["SPACE"] = true;
-						//case SDLK_UP:
-						//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.y += 1;
-						//	break;
-						//case SDLK_DOWN:
-						//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.y += -1;
-						//	break;
-						//case SDLK_LEFT:
-						//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.x += -1;
-						//	break;
-						//case SDLK_RIGHT:
-						//	main_registry.get<PlayerInputComponent>(player_entity).movement_input.x += 1;
-						//	break;
+						break;
+                    case SDLK_w:
+                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = true;
+                        break;
+                    case SDLK_s:
+                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = true;
+                        break;
+					case SDLK_a:
+                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = true;
+                        break;
+                    case SDLK_d:
+                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = true;
+                        break;
 					}
 				}
 				else if (e.type == SDL_KEYUP)
@@ -498,18 +667,7 @@ int main(int argc, char *argv[])
 					//Adjust the velocity
 					switch (e.key.keysym.sym)
 					{
-                        //case SDLK_UP:
-                        //	main_registry.get<PlayerInputComponent>(player_entity).movement_input.y += 0;
-                        //	break;
-                        //case SDLK_DOWN:
-                        //	main_registry.get<PlayerInputComponent>(player_entity).movement_input.y += 0;
-                        //	break;
-                        //case SDLK_LEFT:
-                        //	main_registry.get<PlayerInputComponent>(player_entity).movement_input.x += 0;
-                        //	break;
-                        //case SDLK_RIGHT:
-                        //	main_registry.get<PlayerInputComponent>(player_entity).movement_input.x += 0;
-                        //	brea
+                        
                     case SDLK_UP:
                         main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = false;
                         break;
@@ -525,20 +683,34 @@ int main(int argc, char *argv[])
                     case SDLK_SPACE:
                         main_registry.get<PlayerInputComponent>(player_entity).buttonMap["SPACE"] = false;
                         break;
+
+                    case SDLK_w:
+                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = false;
+                        break;
+                    case SDLK_s:
+                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = false;
+                        break;
+                    case SDLK_a:
+                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = false;
+                        break;
+                    case SDLK_d:
+                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = false;
+                        break; //k;
 					}
 				}
 			}
 		}
 
-		
+		float deltaTime = main_registry.ctx<EngineGlobalData>().deltaTime * main_registry.ctx<EngineGlobalData>().timeDilation;
 
 		process_player_movement(main_registry);
-		
-		spawn_bullets(main_registry, 1.0f / 60.0f);
-		move_objects(main_registry, 1.0f / 60.0f);
+		process_boss_movement(main_registry, deltaTime);
+		spawn_bullets(main_registry, deltaTime);
+		move_objects(main_registry, deltaTime);
 
+		collide_bullets(main_registry);
 		process_ball_collisions(main_registry);
-		process_border_collisions(main_registry);
+		//process_border_collisions(main_registry);
 
 
 		update_animations(main_registry);
@@ -551,7 +723,9 @@ int main(int argc, char *argv[])
 		update_tilemap(main_registry);
 		draw_sprites_sdl(main_registry);
 		
-		end_frame();
+		//draw_ui(main_registry);
+
+		end_frame(main_registry);
 		
 	}
 
