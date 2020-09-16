@@ -3,6 +3,10 @@
 #include <SDL_image.h>
 #include "entt/entt.hpp"
 
+#include "imgui.h"
+#include "imgui_sdl.h"
+#include "examples/imgui_impl_sdl.h"
+#include <iostream>
 SDL_Renderer *gRenderer;
 SDL_Window *gWindow;
 
@@ -81,17 +85,18 @@ bool load_sprite(std::string path, SDL_RenderSprite& sprite)
 
 bool initialize_sdl()
 {
-	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init(SDL_INIT_VIDEO);	
 
+    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 	gWindow = SDL_CreateWindow(
 		"SDL2Test",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
 		WINDOW_WIDTH,
 		WINDOW_HEIGHT,
-		0
+		window_flags
 	);
-
+   
 	//Initialize PNG loading
 	int imgFlags = IMG_INIT_PNG;
 	if (!(IMG_Init(imgFlags) & imgFlags))
@@ -107,19 +112,57 @@ bool initialize_sdl()
 	}
 
 	SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+	
+
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	ImGui_ImplSDL2_InitForD3D(gWindow);
+	ImGuiSDL::Initialize(gRenderer, WINDOW_WIDTH, WINDOW_HEIGHT);
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsClassic();
+
+  
+
 
 	return true;
 }
 
 void start_frame()
 {
-	//Clear screen
-	SDL_RenderClear(gRenderer);
+  
+    //Clear screen
+    SDL_RenderClear(gRenderer);
+	ImGui_ImplSDL2_NewFrame(gWindow);    
+	ImGui::NewFrame();
+	
+
+    //static bool show_demo_window = true;
+    //if (show_demo_window)
+    //    ImGui::ShowDemoWindow(&show_demo_window);
+
+	ImGui::Begin("Test");
+		static int frame = 0;
+	ImGui::Text("FrameNumber %i", frame);
+	frame++;
+	if (ImGui::Button("btn"))
+	{
+		std::cout <<  "	BITTOM";
+	}
+		ImGui::End();
+
+        ImGui::Render();
+        ImGuiSDL::Render(ImGui::GetDrawData());
 }
 
 void end_frame()
 {
-	//Update screen
+   
+    
+   
+
 	SDL_RenderPresent(gRenderer);
 }
 
@@ -129,6 +172,12 @@ void destroy_sdl()
 
 	SDL_DestroyWindow(gWindow);
 	SDL_Quit();
+}
+
+
+void process_imgui_event(SDL_Event* event)
+{
+	ImGui_ImplSDL2_ProcessEvent(event);
 }
 
 SDL_Renderer* get_main_renderer()

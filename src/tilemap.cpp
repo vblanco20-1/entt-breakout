@@ -14,34 +14,34 @@ void update_tilemap(entt::registry& registry)
 	groundframes.push_back(anim_db.anim_tracks["floor_5"]->frames[0]);
 
 	srand(0);
-	for (int y = 0; y < 32; y++) {
-		for (int x = 0; x <32 ; x++) {
-			SDL_RenderSprite sprite;
-			sprite.location = GlobalTilemap::tile_coord_to_screen({ x,y });
-			sprite.location.x += 8.f;
-			sprite.location.y -= 16.f;
-
-			if (sprite.location.x < -20 || sprite.location.x > WINDOW_WIDTH + 20) {
-				continue;
-			}
-			if (sprite.location.y < -20 || sprite.location.y > WINDOW_HEIGHT + 20) {
-				continue;
-			}
-
-			int rng = rand() %5;
-			
-			sprite.texture = groundframes[rng].texture;
-			sprite.texture_rect = groundframes[rng].texture_rect;
-
-			
-			//sprite.location.x = ;
-			//sprite.location.y = y * 16;
-			sprite.width = 16;
-			sprite.height = 16;
-			draw_sprite(sprite, get_main_renderer());
-
-		}
-	}
+	//for (int y = 0; y < 32; y++) {
+	//	for (int x = 0; x <32 ; x++) {
+	//		SDL_RenderSprite sprite;
+	//		sprite.location = GlobalTilemap::tile_coord_to_screen({ x,y });
+	//		sprite.location.x += 8.f;
+	//		sprite.location.y -= 16.f;
+	//
+	//		if (sprite.location.x < -20 || sprite.location.x > WINDOW_WIDTH + 20) {
+	//			continue;
+	//		}
+	//		if (sprite.location.y < -20 || sprite.location.y > WINDOW_HEIGHT + 20) {
+	//			continue;
+	//		}
+	//
+	//		int rng = rand() %5;
+	//		
+	//		sprite.texture = groundframes[rng].texture;
+	//		sprite.texture_rect = groundframes[rng].texture_rect;
+	//
+	//		
+	//		//sprite.location.x = ;
+	//		//sprite.location.y = y * 16;
+	//		sprite.width = 16;
+	//		sprite.height = 16;
+	//		draw_sprite(sprite, get_main_renderer());
+	//
+	//	}
+	//}
 
 	auto view = registry.view<SDL_RenderSprite, TileLocation>();
 

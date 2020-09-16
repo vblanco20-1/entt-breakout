@@ -2,7 +2,7 @@
 #include "vmath.h"
 
 
-
+#include <unordered_map>
 
 struct SpriteLocation{
 	Vec2f location;
@@ -12,6 +12,9 @@ struct RenderScale {
 };
 struct Ball {
 	int num_bounces;
+};
+struct Bullet {
+    int num_bounces;
 };
 struct Brick {
 	int hits_left;
@@ -25,4 +28,28 @@ struct MovementComponent {
 
 struct PlayerInputComponent {
 	Vec2f movement_input;
+
+	std::unordered_map<std::string, bool> buttonMap;
+
+	PlayerInputComponent() {
+		buttonMap["UP"] = false;
+		buttonMap["DOWN"] = false;
+		buttonMap["LEFT"] = false;
+		buttonMap["RIGHT"] = false;
+		buttonMap["SPACE"] = false;
+	}
+};
+
+struct BulletData {
+	Vec2f offset;
+	Vec2f velocity;
+};
+
+struct BulletSpawner {
+	float elapsed = 0.f;
+	float fireRate = 0.1f;
+
+
+
+	std::vector<BulletData> bullets;
 };

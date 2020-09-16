@@ -3,14 +3,15 @@
 #include "vmath.h"
 #include "SDL_rect.h"
 #include <string>
+#include <SDL.h>
 
-constexpr int WINDOW_WIDTH = 800;
-constexpr int WINDOW_HEIGHT = 600;
+constexpr int WINDOW_WIDTH = 600;
+constexpr int WINDOW_HEIGHT = 800;
 
 constexpr Vec2i UP{ 0,-1 };
 constexpr Vec2i RIGHT{ 1,0 };
 
-constexpr Vec2i coordinate_center{ 0,WINDOW_HEIGHT};
+constexpr Vec2i coordinate_center{ WINDOW_WIDTH/2,WINDOW_HEIGHT};
 
 struct SDL_Renderer;
 struct SDL_Window;
@@ -39,6 +40,9 @@ bool initialize_sdl();
 void start_frame();
 void end_frame();
 void destroy_sdl();
+
+void process_imgui_event(SDL_Event *event);
+
 SDL_Renderer* get_main_renderer();
 //converts game space (centered) to screen space
 constexpr Vec2i game_space_to_screen_space(Vec2f location) {

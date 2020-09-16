@@ -15,7 +15,7 @@ find_package(SDL2_image REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2main_INCLUDE_DIRS}  ${SDL2_IMAGE_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
 
 add_executable(minirogue ${SOURCE_FILES})
-target_link_libraries(minirogue ${SDL2_LIBS} ${SDL2_IMAGE_LIBRARIES})
+target_link_libraries(minirogue ${SDL2_LIBS} ${SDL2_IMAGE_LIBRARIES} imgui)
 
 set_target_properties(
     ${PROJECT_NAME} PROPERTIES
