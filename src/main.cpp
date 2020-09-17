@@ -525,7 +525,7 @@ void create_default_templates(EntityDatabase& db) {
         registry.assign<BossMovementComponent>(boss_entity);
         registry.assign<SphereCollider>(boss_entity);
         registry.assign<RenderScale>(boss_entity, Vec2f{ 5.0f,5.0f });
-		registry.assign<Health>(boss_entity, Health{ 600,600 });
+		registry.assign<Health>(boss_entity, Health{ 500,500 });
 		//registry.assign<Health>(boss_entity, Health{ 50,50 });
         load_sprite("../assets/sprites/element_red_polygon_glossy.png", registry.get<SDL_RenderSprite>(boss_entity));
         BossMovementComponent& bmov = registry.get<BossMovementComponent>(boss_entity);
@@ -573,7 +573,7 @@ void create_default_templates(EntityDatabase& db) {
         registry.assign<SDL_RenderSprite>(ball_entity);
         registry.assign<Bullet>(ball_entity);
         registry.assign<PlayAnimComponent>(ball_entity, "tiny_zombie_run_anim");
-        registry.assign<RenderScale>(ball_entity, Vec2f{ 1.0f,1.0f });        
+        registry.assign<RenderScale>(ball_entity, Vec2f{ 0.5f,0.5f });        
         registry.assign<MovementComponent>(ball_entity);
         load_sprite("../assets/sprites/ballGrey.png", registry.get<SDL_RenderSprite>(ball_entity));
         
