@@ -62,3 +62,4 @@ bin/*
 .bash/
 bin/bootstrap
 bin/lib-bash
+/distribution

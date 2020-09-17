@@ -21,8 +21,8 @@ void BOSS_01::init(entt::registry* rg, entt::entity pe)
     bspawner.type = BulletType::BOSS_01;
     bspawner.rotation = 0;
     bspawner.elapsed = 3;
-    for (int i = -8; i <= 8; i++) {
-        float angledeg = i * 10 - 90;
+    for (int i = 0; i <= 32; i++) {
+        float angledeg = (360 / 32) * i;
     
         float anglerad = angledeg * DEG_2_RAD;
     
@@ -44,7 +44,7 @@ void BOSS_01::init(entt::registry* rg, entt::entity pe)
 
 void BOSS_01::update(float deltaTime)
 {
-    entt::entity player;
+    entt::entity player{0};
     for (auto et : sourcereg->view<PlayerInputComponent>()) {
         player = et;
     }
@@ -88,4 +88,12 @@ void BOSS_01::update(float deltaTime)
             }
         }
     }
+
+    //movement logic
+    BossMovementComponent& bmov = sourcereg->get<BossMovementComponent>(parent);
+    SpriteLocation& loc = sourcereg->get<SpriteLocation>(parent);
+
+    bmov.elapsed += deltaTime * bmov.period;
+    loc.location.x = sin(bmov.elapsed) * bmov.size;
+
 }

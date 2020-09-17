@@ -24,6 +24,7 @@ struct SDL_RenderSprite {
 	Vec2i location;
 	int width;
 	int height;
+	int sortlayer{0};
 
 	float rotation;
 	Vec2i rotation_point{0,0};

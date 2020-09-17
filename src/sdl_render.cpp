@@ -32,14 +32,28 @@ void draw_sprites_sdl(entt::registry &registry)
 	auto spriteview = registry.view<SDL_RenderSprite>();
 	SDL_SetRenderTarget(gRenderer,texTarget);
 
-    //SDL_SetRenderDrawColor(gRenderer,
-    //    255, 0, 0, 255);
-	SDL_RenderClear(gRenderer);
+  	SDL_RenderClear(gRenderer);
+
+	static std::vector<SDL_RenderSprite*> sortsprites;
+	sortsprites.clear();
+
 	for (auto et : spriteview)
 	{
 		SDL_RenderSprite &sprite = spriteview.get(et);
-		draw_sprite(sprite, gRenderer);
+		sortsprites.push_back(&sprite);
+		
 	}
+
+	std::sort(sortsprites.begin(), sortsprites.end(), [](auto a, auto b) {
+		return a->sortlayer < b->sortlayer;
+		});
+
+	for (auto sprite : sortsprites)
+	{
+		draw_sprite(*sprite, gRenderer);
+	}
+	
+
 	SDL_SetRenderTarget(gRenderer, nullptr);;
 }
 
@@ -182,7 +196,7 @@ void start_frame(entt::registry& registry)
 	ImGui::NewFrame();
 	
 
-	//draw_ui(registry);
+	draw_ui(registry);
 	
     ImGui::Render();
 

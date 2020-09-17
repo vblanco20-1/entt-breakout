@@ -8,6 +8,9 @@
 struct SpriteLocation{
 	Vec2f location;
 };
+struct Lifetime {
+    float timeLeft;
+};
 struct RenderScale {
 	Vec2f scale;
 };
