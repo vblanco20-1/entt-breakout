@@ -54,17 +54,7 @@ void move_objects(entt::registry &registry, float deltaSeconds) {
 }
 void process_boss_movement(entt::registry& registry, float deltaSeconds)
 {
-	//auto view = registry.view<SpriteLocation, BossMovementComponent>();
-	//
-	//for (auto et : view)
-	//{
-	//	SpriteLocation& loc = view.get<SpriteLocation>(et);
-	//	BossMovementComponent& bmov = view.get<BossMovementComponent>(et);
-	//
-	//	bmov.elapsed += deltaSeconds * bmov.period;
-	//	loc.location.x = sin(bmov.elapsed) * bmov.size;
-	//}
-
+	
 	auto childview = registry.view<SpriteLocation, ChildEntity>();
 	for (auto et : childview)
 	{
@@ -227,6 +217,8 @@ void spawn_bullets(entt::registry& registry, float deltaSeconds)
 	{
         SpriteLocation& location = spawnerview.get<SpriteLocation>(et);
         BulletSpawner& sprite = spawnerview.get<BulletSpawner>(et);
+
+		if (!sprite.enabled) continue;
 
 		sprite.elapsed -= deltaSeconds;
 		if (sprite.elapsed < 0) {

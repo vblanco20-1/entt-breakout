@@ -1,5 +1,16 @@
 #include <bossAI.h>
 #include <gameutils.h>
+#include <random>
+
+std::default_random_engine generator;
+std::uniform_int_distribution<int> distribution(1, 10);
+std::uniform_int_distribution<int> randompos(-30, 30);
+std::uniform_real_distribution<float> randomfloat(-1, 1);
+
+
+float RandomFloat() {
+    return randomfloat(generator);
+}
 
 void BOSS_01::init(entt::registry* rg, entt::entity pe)
 {
@@ -9,7 +20,7 @@ void BOSS_01::init(entt::registry* rg, entt::entity pe)
 
     entt::registry& registry = *rg;
     //initialize spawner
-    main_spawner = registry.create(); 
+    main_spawner = registry.create();
     registry.assign < SpriteLocation>(main_spawner, registry.get<SpriteLocation>(pe));
 
     registry.assign<ChildEntity>(main_spawner);
@@ -23,23 +34,27 @@ void BOSS_01::init(entt::registry* rg, entt::entity pe)
     bspawner.elapsed = 3;
     for (int i = 0; i <= 32; i++) {
         float angledeg = (360 / 32) * i;
-    
+
         float anglerad = angledeg * DEG_2_RAD;
-    
+
         float x = cos(anglerad);
         float y = sin(anglerad);
-    
+
         BulletData b0;
-        b0.velocity = Vec2f{ x , y } *400;
+        b0.velocity = Vec2f{ x , y } *300;
         b0.offset = Vec2f{ x,y } *100;
-    	b0.rotation = angledeg;
+        b0.rotation = angledeg;
         bspawner.bullets.push_back(b0);
     }
-
+    velocity = {0.0, 0.0};
+    movementTarget = defaultLoc;
     pstate.elapsed = 0.1;
     pstate.firerate = 1;
     stage = 0;
     enablePursuer = false;
+   
+    movestate = 0;
+    statetime = 10;
 }
 
 void BOSS_01::update(float deltaTime)
@@ -67,7 +82,11 @@ void BOSS_01::update(float deltaTime)
         sourcereg->get<BulletSpawner>(main_spawner).fireRate = 0.3;
     }
 
-    if (enablePursuer)
+    
+    BulletSpawner &spawner = sourcereg->get<BulletSpawner>(main_spawner);
+        
+    spawner.enabled = movestate == 0 || movestate == 3;
+    if (enablePursuer & (movestate == 0))
     {
         pstate.elapsed -= deltaTime;
         if (pstate.elapsed < 0) {
@@ -89,11 +108,75 @@ void BOSS_01::update(float deltaTime)
         }
     }
 
-    //movement logic
-    BossMovementComponent& bmov = sourcereg->get<BossMovementComponent>(parent);
+    statetime -= deltaTime;
+
     SpriteLocation& loc = sourcereg->get<SpriteLocation>(parent);
+    if (movestate == 0)
+    {
+        //random walk movement logic
+        Vec2f totarget = (movementTarget - loc.location);
 
-    bmov.elapsed += deltaTime * bmov.period;
-    loc.location.x = sin(bmov.elapsed) * bmov.size;
+        float len = totarget.lenght();
 
+        if (len < 30) {
+            Vec2f rng;
+            rng.x = RandomFloat();
+            rng.y = RandomFloat() * 0.2;
+            movementTarget = defaultLoc + (rng * 50);
+        }
+        totarget = (movementTarget - loc.location).normalized();
+        velocity += (totarget * 50) * deltaTime;
+        if (statetime < 0) {
+            movestate = 1;
+            statetime = 1;
+        }
+
+    }
+    else if (movestate == 1) {
+        //no movement
+        velocity = { 0.f,0.f };
+
+        if (statetime < 0) {
+            movestate = 2;
+            statetime = 1;
+        }
+    }
+    else if (movestate == 2) {
+        //swoop down
+
+        velocity.x = 0;
+        velocity.y = -300;
+        if (loc.location.y < 100)
+        {
+            movestate = 3;
+            statetime = 1;
+        }
+    }
+    else if (movestate == 3) {
+        velocity.x = 0;
+        velocity.y = 0;
+        spawner.fireRate = 0.1;
+        spawner.rotation += deltaTime * 15;
+        //no movement
+        if (statetime < 0) {
+            spawner.fireRate = 0.5;
+            spawner.rotation = 0;
+
+            movestate = 4;
+            statetime = 1;
+        }
+    }
+    else if (movestate == 4) {
+        //swoop up
+        velocity.x = 0;
+        velocity.y = +200;
+        if (loc.location.y > 600)
+        {
+            movestate = 0;
+            statetime = 10;
+            velocity.y = 0;
+        }
+    }
+
+    loc.location += velocity * deltaTime;
 }

@@ -70,6 +70,7 @@ struct BulletSpawner {
 	float elapsed = 0.f;
 	float fireRate = 0.1f;
 	float rotation = 0;
+	bool enabled = true;
 	BulletType type{ BulletType::PLAYER_DEFAULT };
 
 	std::vector<BulletData> bullets;
