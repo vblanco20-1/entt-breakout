@@ -24,9 +24,13 @@ struct SDL_RenderSprite {
 	int width;
 	int height;
 
+	float rotation;
+	Vec2i rotation_point{0,0};
+
 	SDL_Rect texture_rect;
 	SDL_Texture* texture{ nullptr };
 	bool use_custom_texture_rect{ false };
+	bool has_rotation{ false };
 	SDL_Rect to_rect() const {
 		return SDL_Rect{ location.x - width / 2, location.y - height / 2, width, height };
 	}

@@ -22,6 +22,7 @@ bool apply_template(std::string_view template_name, EntityDatabase& db, entt::re
         clone_entity(db.databaseRegistry, db.templateMap[std::string{ template_name }], dest_reg, dest_et);
 
         dest_reg.assign_or_replace<OriginalTemplate>(dest_et, std::string{ template_name });
+		dest_reg.assign_or_replace<GameEntity>(dest_et);
         return true;
     }
 }
@@ -118,36 +119,26 @@ void process_player_movement(entt::registry &registry) {
 		movement.velocity.y = input.movement_input.y * 300;
 	}
 }
-
-entt::entity build_player_bullet(entt::registry& registry, Vec2f velocity, Vec2f location)
-{
-	EntityDatabase& db = registry.ctx<EntityDatabase>();
-
-    //ball
-    auto ball_entity = registry.create();
-   
-    apply_template("BULLET_PLAYER_01", db, registry, ball_entity);
-    
-	registry.assign<SpriteLocation>(ball_entity, location);
-	registry.get<MovementComponent>(ball_entity).velocity = velocity;
-   
-
-	return ball_entity;
-}
-
-entt::entity build_boss_bullet(entt::registry& registry, Vec2f velocity, Vec2f location)
+entt::entity build_bullet(std::string btemplate, entt::registry& registry, Vec2f velocity, Vec2f location, float rotation)
 {
     EntityDatabase& db = registry.ctx<EntityDatabase>();
+
     //ball
     auto ball_entity = registry.create();
 
-    apply_template("BULLET_BOSS_01", db, registry, ball_entity);
+    apply_template(btemplate, db, registry, ball_entity);
 
     registry.assign<SpriteLocation>(ball_entity, location);
     registry.get<MovementComponent>(ball_entity).velocity = velocity;
 
+	//translate rotation into what sdl expects
+	registry.get<SDL_RenderSprite>(ball_entity).rotation = (-rotation) + 90;
+
+	registry.get<SDL_RenderSprite>(ball_entity).has_rotation = true;
+
     return ball_entity;
 }
+
 
 void process_border_collisions(entt::registry &registry) {
 
@@ -234,10 +225,12 @@ void spawn_bullets(entt::registry& registry, float deltaSeconds)
 		if (sprite.elapsed < 0) {
 			for (auto b : sprite.bullets) {
 				if (sprite.type == BulletType::PLAYER_DEFAULT) {
-					build_player_bullet(registry, b.velocity, b.offset + location.location);
+					build_bullet("BULLET_PLAYER_01",registry, b.velocity, b.offset + location.location,b.rotation);
+									
 				}
 				else if (sprite.type == BulletType::BOSS_01) {
-					build_boss_bullet(registry, b.velocity, b.offset + location.location);
+					build_bullet("BULLET_BOSS_01",registry, b.velocity, b.offset + location.location, b.rotation);
+					
 				}
 				
 			}
@@ -408,11 +401,13 @@ void collide_bullets(entt::registry& registry) {
 	struct BossCollider {
 		Vec2f center;
 		float radius;
+		entt::entity et;
 	};
 
 	struct PlayerCollider {
 		Vec2f center;
 		float radius;
+		entt::entity et;
 	};
 
 	std::vector<BossCollider> bosses;
@@ -426,7 +421,7 @@ void collide_bullets(entt::registry& registry) {
 		pc.center += playerview.get<SphereCollider>(et).centerOffset;
 
 		pc.radius = playerview.get<SphereCollider>(et).radius;
-
+		pc.et = et;
 		players.push_back(pc);
 	}
 
@@ -438,7 +433,7 @@ void collide_bullets(entt::registry& registry) {
         pc.center += bossview.get<SphereCollider>(et).centerOffset;
 
         pc.radius = bossview.get<SphereCollider>(et).radius;
-
+		pc.et = et;
 		bosses.push_back(pc);
     }
 
@@ -462,6 +457,7 @@ void collide_bullets(entt::registry& registry) {
 				float dist = diff.lenght();
 				if (dist < radius + c.radius) {
 					registry.destroy(et);
+					
 					break;
 				}
 			}
@@ -474,6 +470,7 @@ void collide_bullets(entt::registry& registry) {
                 float dist = diff.lenght();
                 if (dist < radius + c.radius) {
                     registry.destroy(et);
+					registry.destroy(c.et);
                     break;
                 }
             }
@@ -553,6 +550,7 @@ void create_default_templates(EntityDatabase& db) {
             BulletData b0;
             b0.velocity = Vec2f{ x,y } *800;
             b0.offset = { 0,0 };
+			b0.rotation = angledeg;
             bspawner.bullets.push_back(b0);
         }
 
@@ -590,8 +588,9 @@ void create_default_templates(EntityDatabase& db) {
             float y = sin(anglerad);
 
             BulletData b0;
-            b0.velocity = Vec2f{ x * 0.5f , y } *800;
+            b0.velocity = Vec2f{ x , y } *800;
             b0.offset = Vec2f{ x,y } *100;
+			b0.rotation = angledeg;//acos(x * .5);
             bspawner.bullets.push_back(b0);
         }
 
@@ -635,11 +634,32 @@ void create_default_templates(EntityDatabase& db) {
         registry.get<Bullet>(ball_entity).bHitBoss = false;
         registry.get<Bullet>(ball_entity).bHitPlayer = true;
 
+		
+
+
 		db.templateMap["BULLET_BOSS_01"] = ball_entity;
 	}
 }
 
 
+
+void init_game(entt::registry& main_registry, EntityDatabase& db)
+{
+	//initialize player
+	auto player_entity = main_registry.create();
+
+
+	apply_template("PLAYER", db, main_registry, player_entity);
+	main_registry.assign<PlayerInputComponent>(player_entity);
+	main_registry.assign<SpriteLocation>(player_entity, 0.0f, 0.0f);
+	main_registry.assign<Editable>(player_entity, "player");
+	//initialize boss
+	auto boss_entity = main_registry.create();
+	main_registry.assign<SpriteLocation>(boss_entity, 0.0f, 700.0f);
+
+	apply_template("BOSS_01", db, main_registry, boss_entity);
+	main_registry.assign<Editable>(boss_entity, "boss");
+}
 
 int main(int argc, char* argv[])
 {
@@ -651,24 +671,10 @@ int main(int argc, char* argv[])
 	EntityDatabase& db = main_registry.ctx<EntityDatabase>();
 	create_default_templates(db);
 
-	//initialize player
-	auto player_entity = main_registry.create();
-	//main_registry.assign<SDL_RenderSprite>(player_entity);
+	init_game(main_registry, db);
+
+
 	
-
-	apply_template("PLAYER", db, main_registry, player_entity);
-    main_registry.assign<PlayerInputComponent>(player_entity);
-    main_registry.assign<SpriteLocation>(player_entity, 0.0f, 0.0f);
-	main_registry.assign<Editable>(player_entity,"player");
-    //initialize boss
-    auto boss_entity = main_registry.create();
-    main_registry.assign<SpriteLocation>(boss_entity, 0.0f, 700.0f);
-
-	apply_template("BOSS_01", db, main_registry, boss_entity);
-	main_registry.assign<Editable>(boss_entity, "boss");
-
-	//build_basic_boss(main_registry);
-
 
 	BitFont kenney_font;
 	load_font(kenney_font,"../assets/font/kenney_numbers.png", "../assets/font/kenney_numbers.fnt");
@@ -693,6 +699,7 @@ int main(int argc, char* argv[])
 	main_registry.set<EngineGlobalData>();
 	auto start = std::chrono::system_clock::now();
 	auto end = std::chrono::system_clock::now();
+	bool wants_reset = false;
 	while (!quit)
 	{
         end = std::chrono::system_clock::now();
@@ -704,6 +711,8 @@ int main(int argc, char* argv[])
 
 		start_frame(main_registry);
 
+		auto player_entity = main_registry.view<PlayerInputComponent>().data()[0];
+
 		//Handle events on queue
 		while (SDL_PollEvent(&e) != 0)
         {
@@ -712,81 +721,103 @@ int main(int argc, char* argv[])
 			if (e.type == SDL_QUIT)
 			{
 				quit = true;
-			}
-			else
+            }
+            else
 			{
 				//If a key was pressed
 				if (e.type == SDL_KEYDOWN)
 				{
-					//Adjust the velocity
-					switch (e.key.keysym.sym)
+					if (main_registry.valid(player_entity))
 					{
-                    case SDLK_UP:
-						main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] =  true;
-                        break;
-                    case SDLK_DOWN:
-						main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = true;
-                        break;
-                    case SDLK_LEFT:
-						main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = true;
-                        break;
-                    case SDLK_RIGHT:
-						main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = true;
-                        break;
-                    case SDLK_SPACE:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["SPACE"] = true;
-						break;
-                    case SDLK_w:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = true;
-                        break;
-                    case SDLK_s:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = true;
-                        break;
-					case SDLK_a:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = true;
-                        break;
-                    case SDLK_d:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = true;
-                        break;
+						//Adjust the velocity
+						switch (e.key.keysym.sym)
+						{
+						case SDLK_UP:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = true;
+							break;
+						case SDLK_DOWN:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = true;
+							break;
+						case SDLK_LEFT:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = true;
+							break;
+						case SDLK_RIGHT:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = true;
+							break;
+						case SDLK_SPACE:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["SPACE"] = true;
+							break;
+						case SDLK_w:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = true;
+							break;
+						case SDLK_s:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = true;
+							break;
+						case SDLK_a:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = true;
+							break;
+						case SDLK_d:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = true;
+							break;
+						}
 					}
+
+					if (e.key.keysym.sym == SDLK_r)
+					{
+						wants_reset = true;
+					}
+					
 				}
 				else if (e.type == SDL_KEYUP)
 				{
-					//Adjust the velocity
-					switch (e.key.keysym.sym)
+					if (main_registry.valid(player_entity))
 					{
-                        
-                    case SDLK_UP:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = false;
-                        break;
-                    case SDLK_DOWN:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = false;
-                        break;
-                    case SDLK_LEFT:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = false;
-                        break;
-                    case SDLK_RIGHT:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = false;
-                        break; //k;
-                    case SDLK_SPACE:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["SPACE"] = false;
-                        break;
+						//Adjust the velocity
+						switch (e.key.keysym.sym)
+						{
 
-                    case SDLK_w:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = false;
-                        break;
-                    case SDLK_s:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = false;
-                        break;
-                    case SDLK_a:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = false;
-                        break;
-                    case SDLK_d:
-                        main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = false;
-                        break; //k;
+						case SDLK_UP:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = false;
+							break;
+						case SDLK_DOWN:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = false;
+							break;
+						case SDLK_LEFT:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = false;
+							break;
+						case SDLK_RIGHT:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = false;
+							break; //k;
+						case SDLK_SPACE:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["SPACE"] = false;
+							break;
+
+						case SDLK_w:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["UP"] = false;
+							break;
+						case SDLK_s:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["DOWN"] = false;
+							break;
+						case SDLK_a:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["LEFT"] = false;
+							break;
+						case SDLK_d:
+							main_registry.get<PlayerInputComponent>(player_entity).buttonMap["RIGHT"] = false;
+							break; //k;
+						}
 					}
 				}
 			}
+		}
+
+		if (wants_reset) {
+
+			auto bulletview2 = main_registry.view<GameEntity>();
+			for (auto e : bulletview2) {
+				main_registry.destroy(e);
+			}
+			init_game(main_registry, db);
+			wants_reset = false;
 		}
 
 		float deltaTime = main_registry.ctx<EngineGlobalData>().deltaTime * main_registry.ctx<EngineGlobalData>().timeDilation;

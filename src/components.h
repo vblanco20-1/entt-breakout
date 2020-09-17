@@ -54,7 +54,7 @@ struct PlayerInputComponent {
 struct BulletData {
 	Vec2f offset;
 	Vec2f velocity;
-
+	float rotation;
 	
 };
 
@@ -66,10 +66,15 @@ enum class BulletType:int {
 struct BulletSpawner {
 	float elapsed = 0.f;
 	float fireRate = 0.1f;
-
+	float rotation = 0;
 	BulletType type{ BulletType::PLAYER_DEFAULT };
 
 	std::vector<BulletData> bullets;
+};
+
+struct ChildEntity {
+	Vec2f childOffset;
+	entt::entity parent;
 };
 
 struct SphereCollider {
@@ -93,6 +98,10 @@ struct OriginalTemplate {
 struct EntityDatabase {
     entt::registry databaseRegistry;
     std::unordered_map<std::string, entt::entity> templateMap;
+};
+
+struct GameEntity {
+  
 };
 void clone_entity(entt::registry& sourcereg, entt::entity sourceEnt, entt::registry& destreg, entt::entity destEnt);
 void stamp_entity(entt::registry& sourcereg, entt::entity sourceEnt, entt::registry& destreg, entt::entity destEnt);

@@ -17,7 +17,12 @@ void draw_sprite(SDL_RenderSprite& sprite, SDL_Renderer*render_target) {
 	{
 		SDL_Rect renderQuad = sprite.to_rect();
 
-		SDL_RenderCopy(render_target, sprite.texture, &sprite.texture_rect, &renderQuad);
+		if (sprite.has_rotation) {
+			SDL_RenderCopyEx(render_target, sprite.texture, &sprite.texture_rect, &renderQuad,sprite.rotation,nullptr,SDL_RendererFlip::SDL_FLIP_NONE);
+		}
+		else {
+			SDL_RenderCopy(render_target, sprite.texture, &sprite.texture_rect, &renderQuad);
+		}		
 	}
 }
 
