@@ -2,6 +2,7 @@
 #include <math.h>
 #include <random>
 
+constexpr double DEG_2_RAD = 0.01745329252;
 struct Vec2f {
 	float x{ 0.f };
 	float y{ 0.f };
@@ -36,7 +37,9 @@ struct Vec2f {
 	float lenght() const {
 		return sqrt(x*x + y * y);
 	}
-
+    double lenghtd() const {
+        return sqrt(x * x + y * y);
+    }
 	Vec2f normalized() {
 		float l = lenght();
 
@@ -48,6 +51,25 @@ struct Vec2f {
 		v.x = x * other;
 		v.y = y * other;
 		return v;
+	}
+
+	void rotate_degrees(double angleDegrees) {
+		
+		//double len = lenghtd();
+		//double nx = (double)x / len;
+		//double ny = (double)y / len;
+		double anglerad = angleDegrees * DEG_2_RAD;
+
+        double nx = x * cos(anglerad) - y * sin(anglerad);
+        double ny = x * sin(anglerad) + y * cos(anglerad);
+        //double angle = atan(ny / nx);
+        //angle += anglerad;
+        //
+        //nx = cos(angle) * len;
+        //ny = sin(angle) * len;
+
+		x = nx;
+		y = ny;
 	}
 };
 

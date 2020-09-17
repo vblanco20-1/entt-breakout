@@ -224,12 +224,18 @@ void spawn_bullets(entt::registry& registry, float deltaSeconds)
 		sprite.elapsed -= deltaSeconds;
 		if (sprite.elapsed < 0) {
 			for (auto b : sprite.bullets) {
+
+				Vec2f offset = b.offset;
+				Vec2f velocity = b.velocity;
+
+				offset.rotate_degrees(sprite.rotation);
+				velocity.rotate_degrees(sprite.rotation);
 				if (sprite.type == BulletType::PLAYER_DEFAULT) {
-					build_bullet("BULLET_PLAYER_01",registry, b.velocity, b.offset + location.location,b.rotation);
+					build_bullet("BULLET_PLAYER_01",registry, velocity, offset + location.location,b.rotation + sprite.rotation);
 									
 				}
 				else if (sprite.type == BulletType::BOSS_01) {
-					build_bullet("BULLET_BOSS_01",registry, b.velocity, b.offset + location.location, b.rotation);
+					build_bullet("BULLET_BOSS_01",registry, velocity, offset + location.location, b.rotation + sprite.rotation);
 					
 				}
 				
@@ -481,44 +487,6 @@ void collide_bullets(entt::registry& registry) {
     return;
 }
 
-void build_basic_boss(entt::registry& main_registry)
-{
-	//initialize boss
-	auto boss_entity = main_registry.create();
-	main_registry.assign<SDL_RenderSprite>(boss_entity);
-	main_registry.assign<SpriteLocation>(boss_entity, 0.0f, 700.0f);
-	main_registry.assign<BossMovementComponent>(boss_entity);
-	main_registry.assign<SphereCollider>(boss_entity);
-	main_registry.assign<RenderScale>(boss_entity, Vec2f{ 5.0f,5.0f });
-	load_sprite("../assets/sprites/element_red_polygon_glossy.png", main_registry.get<SDL_RenderSprite>(boss_entity));
-	BossMovementComponent& bmov = main_registry.get<BossMovementComponent>(boss_entity);
-
-	main_registry.get<SphereCollider>(boss_entity).radius = 100;
-
-	bmov.center.x = 0;
-	bmov.center.y = 700.f;
-	bmov.period = 0.3;
-
-    main_registry.assign<BulletSpawner>(boss_entity);
-   
-
-    BulletSpawner& bspawner = main_registry.get<BulletSpawner>(boss_entity);
-    bspawner.fireRate = 0.15;
-	bspawner.type = BulletType::BOSS_01;
-    for (int i = -5; i <= 5; i++) {
-        float angledeg = i * 10 - 90;
-
-        float anglerad = angledeg * 0.01745329252;
-
-        float x = cos(anglerad);
-        float y = sin(anglerad);
-
-        BulletData b0;
-        b0.velocity = Vec2f{ x*0.5f , y } *800;
-        b0.offset = Vec2f{ x,y } * 100;
-        bspawner.bullets.push_back(b0);
-    }
-}
 
 
 void create_default_templates(EntityDatabase& db) {
@@ -579,10 +547,11 @@ void create_default_templates(EntityDatabase& db) {
         BulletSpawner& bspawner = registry.get<BulletSpawner>(boss_entity);
         bspawner.fireRate = 0.15;
         bspawner.type = BulletType::BOSS_01;
+		bspawner.rotation = 0;
         for (int i = -5; i <= 5; i++) {
             float angledeg = i * 10 - 90;
 
-            float anglerad = angledeg * 0.01745329252;
+            float anglerad = angledeg * DEG_2_RAD;
 
             float x = cos(anglerad);
             float y = sin(anglerad);
@@ -672,7 +641,6 @@ int main(int argc, char* argv[])
 	create_default_templates(db);
 
 	init_game(main_registry, db);
-
 
 	
 
