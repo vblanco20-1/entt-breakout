@@ -3,7 +3,7 @@
 
 
 #include <unordered_map>
-#include "entt/fwd.hpp"
+#include "entt/entt.hpp"
 
 struct SpriteLocation{
 	Vec2f location;
@@ -90,5 +90,9 @@ struct Editable {
 struct OriginalTemplate {
    std::string ogTemplate;
 };
-
+struct EntityDatabase {
+    entt::registry databaseRegistry;
+    std::unordered_map<std::string, entt::entity> templateMap;
+};
+void clone_entity(entt::registry& sourcereg, entt::entity sourceEnt, entt::registry& destreg, entt::entity destEnt);
 void stamp_entity(entt::registry& sourcereg, entt::entity sourceEnt, entt::registry& destreg, entt::entity destEnt);

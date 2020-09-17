@@ -12,10 +12,19 @@
 #include <string_view>
 int score = 0;
 
-struct EntityDatabase {
-	entt::registry databaseRegistry;
-	std::unordered_map<std::string, entt::entity> templateMap;
-};
+bool apply_template(std::string_view template_name, EntityDatabase& db, entt::registry& dest_reg, entt::entity dest_et) {
+
+    if (db.templateMap.find(std::string{ template_name }) == db.templateMap.end()) {
+        return false;
+    }
+    else {
+
+        clone_entity(db.databaseRegistry, db.templateMap[std::string{ template_name }], dest_reg, dest_et);
+
+        dest_reg.assign_or_replace<OriginalTemplate>(dest_et, std::string{ template_name });
+        return true;
+    }
+}
 
 void transform_sprites(entt::registry &registry)
 {
@@ -112,46 +121,31 @@ void process_player_movement(entt::registry &registry) {
 
 entt::entity build_player_bullet(entt::registry& registry, Vec2f velocity, Vec2f location)
 {
+	EntityDatabase& db = registry.ctx<EntityDatabase>();
+
     //ball
     auto ball_entity = registry.create();
-    registry.assign<SDL_RenderSprite>(ball_entity);
-    registry.assign<Bullet>(ball_entity);
-    registry.assign<PlayAnimComponent>(ball_entity, "tiny_zombie_run_anim");
-    registry.assign<RenderScale>(ball_entity, Vec2f{ 1.0f,1.0f });
-    registry.assign<SpriteLocation>(ball_entity, location);
-    registry.assign<MovementComponent>(ball_entity);
-    load_sprite("../assets/sprites/ballGrey.png", registry.get<SDL_RenderSprite>(ball_entity));
+   
+    apply_template("BULLET_PLAYER_01", db, registry, ball_entity);
+    
+	registry.assign<SpriteLocation>(ball_entity, location);
 	registry.get<MovementComponent>(ball_entity).velocity = velocity;
-
-    registry.assign<SphereCollider>(ball_entity);
-
-	registry.get<SphereCollider>(ball_entity).radius = 10;
-
-    registry.get<Bullet>(ball_entity).bHitBoss = true;
-    registry.get<Bullet>(ball_entity).bHitPlayer = false;
+   
 
 	return ball_entity;
 }
 
 entt::entity build_boss_bullet(entt::registry& registry, Vec2f velocity, Vec2f location)
 {
+    EntityDatabase& db = registry.ctx<EntityDatabase>();
     //ball
     auto ball_entity = registry.create();
-    registry.assign<SDL_RenderSprite>(ball_entity);
-    registry.assign<Bullet>(ball_entity);
-    //registry.assign<PlayAnimComponent>(ball_entity, "tiny_zombie_run_anim");
-    registry.assign<RenderScale>(ball_entity, Vec2f{ 1.0f,1.0f });
+
+    apply_template("BULLET_BOSS_01", db, registry, ball_entity);
+
     registry.assign<SpriteLocation>(ball_entity, location);
-    registry.assign<MovementComponent>(ball_entity);
-    load_sprite("../assets/sprites/ballBlue.png", registry.get<SDL_RenderSprite>(ball_entity));
     registry.get<MovementComponent>(ball_entity).velocity = velocity;
 
-    registry.assign<SphereCollider>(ball_entity);
-
-    registry.get<SphereCollider>(ball_entity).radius = 10;
-
-	registry.get<Bullet>(ball_entity).bHitBoss = false;
-	registry.get<Bullet>(ball_entity).bHitPlayer = true;
     return ball_entity;
 }
 
@@ -645,19 +639,7 @@ void create_default_templates(EntityDatabase& db) {
 	}
 }
 
-bool apply_template(std::string_view template_name, EntityDatabase& db, entt::registry& dest_reg, entt::entity dest_et) {
 
-	if (db.templateMap.find(std::string{ template_name }) == db.templateMap.end()) {
-		return false;
-	}
-	else {
-
-		stamp_entity(db.databaseRegistry, db.templateMap[std::string{ template_name }], dest_reg, dest_et);
-
-		dest_reg.assign_or_replace<OriginalTemplate>(dest_et, std::string{ template_name });
-		return true;
-	}
-}
 
 int main(int argc, char* argv[])
 {
