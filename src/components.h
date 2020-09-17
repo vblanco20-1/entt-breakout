@@ -103,5 +103,37 @@ struct EntityDatabase {
 struct GameEntity {
   
 };
+
+class AIImplementation {
+public:
+	virtual void init(entt::registry * registry, entt::entity pe) {
+		sourcereg = registry;
+		parent = pe;
+	}
+	virtual void update(float deltaTime) {
+
+	}
+
+entt::registry* sourcereg;
+	entt::entity parent;
+};
+struct BossAI {
+	std::unique_ptr<AIImplementation> impl;
+	
+};
+struct BossAIName {
+   
+    std::string bossName;
+};
+
+struct Health {
+	float hp = 100;
+	float maxhp = 100;
+
+	int getPercent() {
+		int percent = (hp / maxhp) * 100;
+		return percent;
+	}
+};
 void clone_entity(entt::registry& sourcereg, entt::entity sourceEnt, entt::registry& destreg, entt::entity destEnt);
 void stamp_entity(entt::registry& sourcereg, entt::entity sourceEnt, entt::registry& destreg, entt::entity destEnt);

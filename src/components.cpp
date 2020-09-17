@@ -23,6 +23,8 @@ void clone_entity(entt::registry& sourcereg, entt::entity sourceEnt, entt::regis
     copycomp<BulletData>(sourcereg, sourceEnt, destreg, destEnt);
     copycomp<BulletSpawner>(sourcereg, sourceEnt, destreg, destEnt);
     copycomp<SphereCollider>(sourcereg, sourceEnt, destreg, destEnt);
+    copycomp<BossAIName>(sourcereg, sourceEnt, destreg, destEnt);
+    copycomp<Health>(sourcereg, sourceEnt, destreg, destEnt);
 }
 
 
@@ -40,4 +42,6 @@ void stamp_entity(entt::registry& sourcereg, entt::entity sourceEnt, entt::regis
     copycomp<BulletData>(sourcereg, sourceEnt, destreg, destEnt);
     copycomp<BulletSpawner>(sourcereg, sourceEnt, destreg, destEnt);
     copycomp<SphereCollider>(sourcereg, sourceEnt, destreg, destEnt);    
+    copycomp<BossAIName>(sourcereg, sourceEnt, destreg, destEnt);
+    copycomp<Health>(sourcereg, sourceEnt, destreg, destEnt);
 }
