@@ -11,7 +11,7 @@
 #include "compedit.h"
 SDL_Renderer *gRenderer;
 SDL_Window *gWindow;
-
+SDL_Texture* texTarget;
 void draw_sprite(SDL_RenderSprite& sprite, SDL_Renderer*render_target) {
 	if (render_target && sprite.texture)
 	{
@@ -30,12 +30,17 @@ void draw_sprite(SDL_RenderSprite& sprite, SDL_Renderer*render_target) {
 void draw_sprites_sdl(entt::registry &registry)
 {
 	auto spriteview = registry.view<SDL_RenderSprite>();
+	SDL_SetRenderTarget(gRenderer,texTarget);
 
+    //SDL_SetRenderDrawColor(gRenderer,
+    //    255, 0, 0, 255);
+	SDL_RenderClear(gRenderer);
 	for (auto et : spriteview)
 	{
 		SDL_RenderSprite &sprite = spriteview.get(et);
 		draw_sprite(sprite, gRenderer);
 	}
+	SDL_SetRenderTarget(gRenderer, nullptr);;
 }
 
 void draw_ui(entt::registry& registry)
@@ -120,10 +125,10 @@ bool initialize_sdl()
 
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 	gWindow = SDL_CreateWindow(
-		"SDL2Test",
+		"Bulletgame",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
-		WINDOW_WIDTH,
+		TRUE_WINDOW_WIDTH,
 		WINDOW_HEIGHT,
 		window_flags
 	);
@@ -142,6 +147,10 @@ bool initialize_sdl()
 		return false;
 	}
 
+    //Make a target texture to render too
+    texTarget = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_TARGET, WINDOW_WIDTH, WINDOW_HEIGHT);
+
 	SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 	
 
@@ -150,7 +159,7 @@ bool initialize_sdl()
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	ImGui_ImplSDL2_InitForD3D(gWindow);
-	ImGuiSDL::Initialize(gRenderer, WINDOW_WIDTH, WINDOW_HEIGHT);
+	ImGuiSDL::Initialize(gRenderer, TRUE_WINDOW_WIDTH, WINDOW_HEIGHT);
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
@@ -165,23 +174,40 @@ void start_frame(entt::registry& registry)
 {
   
     //Clear screen
-    SDL_RenderClear(gRenderer);
-	ImGui_ImplSDL2_NewFrame(gWindow);    
+	SDL_SetRenderTarget(gRenderer, nullptr);
+	SDL_SetRenderDrawColor(gRenderer, 0, 0, 100, SDL_ALPHA_OPAQUE);
+	SDL_RenderClear(gRenderer);
+	SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+	ImGui_ImplSDL2_NewFrame(gWindow);
 	ImGui::NewFrame();
 	
 
-	draw_ui(registry);
+	//draw_ui(registry);
 	
     ImGui::Render();
+
     ImGuiSDL::Render(ImGui::GetDrawData());
        
 }
 
+
+void draw_screen()
+{
+	SDL_Rect dst;
+
+	dst.x = TRUE_WINDOW_WIDTH / 2 - WINDOW_WIDTH / 2;
+	dst.y = 0;
+	dst.w = WINDOW_WIDTH;
+	dst.h = WINDOW_HEIGHT;
+
+	SDL_RenderCopyEx(gRenderer, texTarget, nullptr, &dst, 0, nullptr, SDL_FLIP_NONE);
+}
+
 void end_frame(entt::registry& registry)
 {
-   
-   
-   
+	//draw_screen();
+
+	
 	SDL_RenderFlush(gRenderer);
 	SDL_RenderPresent(gRenderer);
 }

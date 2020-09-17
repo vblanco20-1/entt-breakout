@@ -526,6 +526,7 @@ void create_default_templates(EntityDatabase& db) {
         registry.assign<SphereCollider>(boss_entity);
         registry.assign<RenderScale>(boss_entity, Vec2f{ 5.0f,5.0f });
 		registry.assign<Health>(boss_entity, Health{ 600,600 });
+		//registry.assign<Health>(boss_entity, Health{ 50,50 });
         load_sprite("../assets/sprites/element_red_polygon_glossy.png", registry.get<SDL_RenderSprite>(boss_entity));
         BossMovementComponent& bmov = registry.get<BossMovementComponent>(boss_entity);
 
@@ -863,7 +864,9 @@ int main(int argc, char* argv[])
 		update_animations(main_registry);
 		transform_sprites(main_registry);
 
-
+        update_tilemap(main_registry);
+        draw_sprites_sdl(main_registry);
+		draw_screen();
 		//entt::entity boss;
 		for (auto et : main_registry.view<BossAI,Health>()) {
 			boss = et;
@@ -874,12 +877,19 @@ int main(int argc, char* argv[])
 			int percent = main_registry.get<Health>(boss).getPercent();
 			draw_string(kenney_font, "boss hp:" + std::to_string(percent), Vec2i{ 10,650 });
 		}
+		else {
+			draw_string(kenney_font, "you are winner", Vec2i{ 500,WINDOW_HEIGHT/2 });
+		}
         
+		if (!main_registry.valid(player_entity))
+		{
+			draw_string(kenney_font, "you died", Vec2i{ 500,WINDOW_HEIGHT / 2 });
+			draw_string(kenney_font, "press r to restart", Vec2i{ 500,(WINDOW_HEIGHT / 2)+100 });
+		}
 
 		draw_string(kenney_font, "time:" + std::to_string(gametime), Vec2i{10,750});
 		
-		update_tilemap(main_registry);
-		draw_sprites_sdl(main_registry);
+		
 		
 		//draw_ui(main_registry);
 

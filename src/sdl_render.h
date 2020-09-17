@@ -5,7 +5,8 @@
 #include <string>
 #include <SDL.h>
 
-constexpr int WINDOW_WIDTH = 1400;
+constexpr int WINDOW_WIDTH = 600;
+constexpr int TRUE_WINDOW_WIDTH = 1400;
 constexpr int WINDOW_HEIGHT = 800;
 
 constexpr Vec2i UP{ 0,-1 };
@@ -43,6 +44,7 @@ bool load_sprite(std::string path, SDL_RenderSprite& sprite);
 
 bool initialize_sdl();
 void start_frame(entt::registry& registry);
+void draw_screen();
 void end_frame(entt::registry& registry);
 void destroy_sdl();
 
