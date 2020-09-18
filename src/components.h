@@ -70,6 +70,7 @@ struct BulletSpawner {
 	float elapsed = 0.f;
 	float fireRate = 0.1f;
 	float rotation = 0;
+	float scaleMultiplier = 1.f;
 	bool enabled = true;
 	BulletType type{ BulletType::PLAYER_DEFAULT };
 
@@ -90,6 +91,8 @@ struct SphereCollider {
 struct EngineGlobalData {
 	float deltaTime;
 	float timeDilation{ 1.f };
+	int levelRequest = -1;
+	int currentLevel{0};
 };
 
 struct Editable {
@@ -122,8 +125,7 @@ entt::registry* sourcereg;
 	entt::entity parent;
 };
 struct BossAI {
-	std::unique_ptr<AIImplementation> impl;
-	
+	std::unique_ptr<AIImplementation> impl;	
 };
 struct BossAIName {
    

@@ -17,6 +17,12 @@ void draw_sprite(SDL_RenderSprite& sprite, SDL_Renderer*render_target) {
 	{
 		SDL_Rect renderQuad = sprite.to_rect();
 
+		//SDL_SetTextureColorMod(sprite.texture,
+		//	255,
+		//	0,
+		//	0);
+
+
 		if (sprite.has_rotation) {
 			SDL_RenderCopyEx(render_target, sprite.texture, &sprite.texture_rect, &renderQuad,sprite.rotation,nullptr,SDL_RendererFlip::SDL_FLIP_NONE);
 		}
@@ -40,13 +46,12 @@ void draw_sprites_sdl(entt::registry &registry)
 	for (auto et : spriteview)
 	{
 		SDL_RenderSprite &sprite = spriteview.get(et);
-		sortsprites.push_back(&sprite);
-		
+		sortsprites.push_back(&sprite);		
 	}
 
 	std::sort(sortsprites.begin(), sortsprites.end(), [](auto a, auto b) {
 		return a->sortlayer < b->sortlayer;
-		});
+	});
 
 	for (auto sprite : sortsprites)
 	{
@@ -59,17 +64,21 @@ void draw_sprites_sdl(entt::registry &registry)
 
 void draw_ui(entt::registry& registry)
 {
-    //auto spriteview = registry.view<SDL_RenderSprite>();
-	//
-    //for (auto et : spriteview)
-    //{
-    //    SDL_RenderSprite& sprite = spriteview.get(et);
-    //    draw_sprite(sprite, gRenderer);
-    //}
 
-	ImGui::ShowDemoWindow();
-
+	//ImGui::ShowDemoWindow();
 	EngineGlobalData& dty = registry.ctx<EngineGlobalData>();
+	ImGui::Begin("Level select");
+	if (ImGui::Button("1", { 50,50 })) {
+		dty.levelRequest = 1;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("2", { 50,50 })) {
+		dty.levelRequest = 2;
+	}
+	ImGui::End();
+
+
+	
 
     ImGui::Begin("Test");
     

@@ -1,6 +1,7 @@
 #include <bossAI.h>
 #include <gameutils.h>
 #include <random>
+#include "sdl_render.h"
 
 std::default_random_engine generator;
 std::uniform_int_distribution<int> distribution(1, 10);
@@ -32,8 +33,8 @@ void BOSS_01::init(entt::registry* rg, entt::entity pe)
     bspawner.type = BulletType::BOSS_01;
     bspawner.rotation = 0;
     bspawner.elapsed = 3;
-    for (int i = 0; i <= 32; i++) {
-        float angledeg = (360 / 32) * i;
+    for (int i = 0; i <= 28; i++) {
+        float angledeg = (360 / 28) * i;
 
         float anglerad = angledeg * DEG_2_RAD;
 
@@ -169,8 +170,8 @@ void BOSS_01::update(float deltaTime)
     else if (movestate == 4) {
         //swoop up
         velocity.x = 0;
-        velocity.y = +200;
-        if (loc.location.y > 600)
+        velocity.y = +150;
+        if (loc.location.y > 650)
         {
             movestate = 0;
             statetime = 10;
@@ -179,4 +180,93 @@ void BOSS_01::update(float deltaTime)
     }
 
     loc.location += velocity * deltaTime;
+}
+
+void BOSS_02::init(entt::registry* rg, entt::entity pe)
+{
+    AIImplementation::init(rg, pe);
+
+    //create spawner child
+
+    entt::registry& registry = *rg;
+    
+
+
+    //create swirl spawners
+    for (int i = 0; i < 3; i++) {
+        //initialize spawner
+        build_spawner(registry, pe, i);
+
+    }
+
+   
+    velocity = { 0.0, 0.0 };
+    movementTarget = defaultLoc;
+}
+
+void BOSS_02::build_spawner(entt::registry& registry, entt::entity pe, int i)
+{
+    entt::entity main_spawner = registry.create();
+    registry.assign < SpriteLocation>(main_spawner, registry.get<SpriteLocation>(pe));
+
+    registry.assign<ChildEntity>(main_spawner);
+    registry.get<ChildEntity>(main_spawner).parent = pe;
+    registry.assign<BulletSpawner>(main_spawner);
+
+    BulletSpawner& bspawner = registry.get<BulletSpawner>(main_spawner);
+    bspawner.fireRate = 0.1 * (1 / spawn_rotationspeed[i]);
+    bspawner.type = BulletType::BOSS_01;
+    bspawner.rotation = spawn_angles[i];
+    bspawner.scaleMultiplier = spawn_scales[i];
+    bspawner.elapsed = 3;
+
+    //only one bullet at once
+    BulletData b0;
+    b0.velocity = Vec2f{ 1 , 0 } *300;
+    b0.offset = Vec2f{ 0,0 };
+    b0.rotation = 0;
+    bspawner.bullets.push_back(b0);
+
+    spawners.push_back(main_spawner);
+}
+
+void BOSS_02::update(float deltaTime)
+{
+    SpriteLocation& loc = sourcereg->get<SpriteLocation>(parent);
+    //random walk movement logic
+    Vec2f totarget = (movementTarget - loc.location);
+
+    float len = totarget.lenght();
+
+    if (len < 30) {
+        Vec2f rng;
+        rng.x = RandomFloat();
+        rng.y = RandomFloat() * 0.2;
+        movementTarget = defaultLoc + (rng * 50);
+    }
+    totarget = (movementTarget - loc.location).normalized();
+    velocity += (totarget * 50) * deltaTime;
+    loc.location += velocity * deltaTime;
+
+    sourcereg->get<SDL_RenderSprite>(parent).has_rotation = true;
+    sourcereg->get<SDL_RenderSprite>(parent).rotation += 180 * deltaTime;
+    
+    int percent = sourcereg->get<Health>(parent).getPercent();
+
+    if (percent < 70 && spawners.size() == 3)
+    {
+        build_spawner(*sourcereg, parent, 4);
+    }
+    if (percent < 40 && spawners.size() == 4)
+    {
+        build_spawner(*sourcereg, parent, 5);
+    }
+    
+    //spin spawners
+
+    for (int i = 0; i < spawners.size(); i++) {
+        BulletSpawner& spawner =  sourcereg->get<BulletSpawner>(spawners[i]);
+        float extrarot = spawn_rotationspeed[i] * 180;
+        spawner.rotation += deltaTime * extrarot;
+    }
 }

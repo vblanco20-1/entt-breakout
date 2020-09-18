@@ -53,20 +53,12 @@ struct Vec2f {
 		return v;
 	}
 
-	void rotate_degrees(double angleDegrees) {
+	void rotate_degrees(double angleDegrees) {		
 		
-		//double len = lenghtd();
-		//double nx = (double)x / len;
-		//double ny = (double)y / len;
 		double anglerad = angleDegrees * DEG_2_RAD;
 
         double nx = x * cos(anglerad) - y * sin(anglerad);
-        double ny = x * sin(anglerad) + y * cos(anglerad);
-        //double angle = atan(ny / nx);
-        //angle += anglerad;
-        //
-        //nx = cos(angle) * len;
-        //ny = sin(angle) * len;
+        double ny = x * sin(anglerad) + y * cos(anglerad);       
 
 		x = nx;
 		y = ny;

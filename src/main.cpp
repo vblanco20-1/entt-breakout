@@ -12,6 +12,7 @@
 #include <string_view>
 #include <bossAI.h>
 #include <gameutils.h>
+#include <templates.h>
 int score = 0;
 
 
@@ -218,6 +219,7 @@ void spawn_bullets(entt::registry& registry, float deltaSeconds)
         SpriteLocation& location = spawnerview.get<SpriteLocation>(et);
         BulletSpawner& sprite = spawnerview.get<BulletSpawner>(et);
 
+		Vec2f loc = location.location;
 		if (!sprite.enabled) continue;
 
 		sprite.elapsed -= deltaSeconds;
@@ -229,14 +231,25 @@ void spawn_bullets(entt::registry& registry, float deltaSeconds)
 
 				offset.rotate_degrees(sprite.rotation);
 				velocity.rotate_degrees(sprite.rotation);
+				entt::entity newBullet = 0;
 				if (sprite.type == BulletType::PLAYER_DEFAULT) {
-					build_bullet("BULLET_PLAYER_01",registry, velocity, offset + location.location,b.rotation + sprite.rotation);
+					newBullet = build_bullet("BULLET_PLAYER_01",registry, velocity, offset + loc,b.rotation + sprite.rotation);
 									
 				}
 				else if (sprite.type == BulletType::BOSS_01) {
-					build_bullet("BULLET_BOSS_01",registry, velocity, offset + location.location, b.rotation + sprite.rotation);
+					newBullet = build_bullet("BULLET_BOSS_01",registry, velocity, offset + loc, b.rotation + sprite.rotation);
 					
 				}
+
+				if (registry.has<RenderScale>(newBullet))
+				{
+					registry.get<RenderScale>(newBullet).scale = registry.get<RenderScale>(newBullet).scale * sprite.scaleMultiplier;
+				}
+
+                if (registry.has<SphereCollider>(newBullet))
+                {
+                    registry.get<SphereCollider>(newBullet).radius *= sprite.scaleMultiplier;
+                }
 				
 			}
 			
@@ -511,141 +524,11 @@ void collide_bullets(entt::registry& registry) {
 
 
 
-void create_default_templates(EntityDatabase& db) {
-	
-	entt::registry& registry = db.databaseRegistry;
-	//player
-	{
-        //initialize player
-        auto player_entity = registry.create();
-        registry.assign<SDL_RenderSprite>(player_entity);
-        registry.assign<MovementComponent>(player_entity);
-        registry.assign<BulletSpawner>(player_entity);
-        registry.assign<RenderScale>(player_entity, Vec2f{ 0.3f,1.0f });
-        load_sprite("../assets/sprites/paddleBlu.png", registry.get<SDL_RenderSprite>(player_entity));
-		registry.assign<SphereCollider>(player_entity);
-
-		registry.get<SDL_RenderSprite>(player_entity).sortlayer = 100000;
-
-		registry.get<SphereCollider>(player_entity).radius = 10;
-
-        BulletSpawner& bspawner = registry.get<BulletSpawner>(player_entity);
-        bspawner.fireRate = 0.15;
-        for (int i = -2; i <= 2; i++) {
-            float angledeg = i * 10 + 90;
-
-            float anglerad = angledeg * 0.01745329252;
-
-            float x = cos(anglerad);
-            float y = sin(anglerad);
-
-            BulletData b0;
-            b0.velocity = Vec2f{ x,y } *800;
-            b0.offset = { 0,0 };
-			b0.rotation = angledeg;
-            bspawner.bullets.push_back(b0);
-        }
-
-		db.templateMap["PLAYER"] = player_entity;
-	}
-
-	//boss
-	{
-        //initialize boss
-        auto boss_entity = registry.create();
-        registry.assign<SDL_RenderSprite>(boss_entity);       
-        registry.assign<BossMovementComponent>(boss_entity);
-        registry.assign<SphereCollider>(boss_entity);
-        registry.assign<RenderScale>(boss_entity, Vec2f{ 5.0f,5.0f });
-		registry.assign<Health>(boss_entity, Health{ 500,500 });
-		//registry.assign<Health>(boss_entity, Health{ 50,50 });
-        load_sprite("../assets/sprites/element_red_polygon_glossy.png", registry.get<SDL_RenderSprite>(boss_entity));
-        BossMovementComponent& bmov = registry.get<BossMovementComponent>(boss_entity);
-
-		registry.get<SphereCollider>(boss_entity).radius = 100;
-
-		registry.get<SDL_RenderSprite>(boss_entity).sortlayer = -1000;
-
-        bmov.center.x = 0;
-        bmov.center.y = 700.f;
-        bmov.period = 0.3;
-
-		registry.assign<BossAIName>(boss_entity, "AI_BOSS_01");
-		
-		
-		registry.assign<BulletSpawner>(boss_entity);
-
-		db.templateMap["BOSS_01"] = boss_entity;
-	}
-
-	//player bullet
-
-	{
-        //ball
-        auto ball_entity = registry.create();
-        registry.assign<SDL_RenderSprite>(ball_entity);
-        registry.assign<Bullet>(ball_entity);
-        registry.assign<PlayAnimComponent>(ball_entity, "tiny_zombie_run_anim");
-        registry.assign<RenderScale>(ball_entity, Vec2f{ 0.5f,0.5f });        
-        registry.assign<MovementComponent>(ball_entity);
-        load_sprite("../assets/sprites/ballGrey.png", registry.get<SDL_RenderSprite>(ball_entity));
-        
-		registry.get<SDL_RenderSprite>(ball_entity).sortlayer = -5000;
-        registry.assign<SphereCollider>(ball_entity);
-
-        registry.get<SphereCollider>(ball_entity).radius = 10;
-
-        registry.get<Bullet>(ball_entity).bHitBoss = true;
-        registry.get<Bullet>(ball_entity).bHitPlayer = false;
-
-		db.templateMap["BULLET_PLAYER_01"] = ball_entity;
-	}
-	{
-        //ball
-        auto ball_entity = registry.create();
-        registry.assign<SDL_RenderSprite>(ball_entity);
-        registry.assign<Bullet>(ball_entity);
-        registry.assign<RenderScale>(ball_entity, Vec2f{ 1.0f,1.0f });
-        registry.assign<MovementComponent>(ball_entity);
-        load_sprite("../assets/sprites/ballBlue.png", registry.get<SDL_RenderSprite>(ball_entity));
-        registry.assign<SphereCollider>(ball_entity);
-
-        registry.get<SphereCollider>(ball_entity).radius = 10;
-
-        registry.get<Bullet>(ball_entity).bHitBoss = false;
-        registry.get<Bullet>(ball_entity).bHitPlayer = true;
-
-		registry.get<SDL_RenderSprite>(ball_entity).sortlayer = 100;
-		
-
-
-		db.templateMap["BULLET_BOSS_01"] = ball_entity;
-	}
-    {        
-		//ball
-        auto ball_entity = registry.create();
-        registry.assign<SDL_RenderSprite>(ball_entity);
-        registry.assign<Bullet>(ball_entity);
-        registry.assign<RenderScale>(ball_entity, Vec2f{ 1.0f,1.0f });
-        registry.assign<MovementComponent>(ball_entity);
-        load_sprite("../assets/sprites/element_purple_diamond.png", registry.get<SDL_RenderSprite>(ball_entity));
-        registry.assign<SphereCollider>(ball_entity);
-
-        registry.get<SphereCollider>(ball_entity).radius = 10;
-
-        registry.get<Bullet>(ball_entity).bHitBoss = false;
-        registry.get<Bullet>(ball_entity).bHitPlayer = true;
-
-		registry.get<SDL_RenderSprite>(ball_entity).sortlayer = 200;
-
-
-        db.templateMap["BULLET_BOSS_02"] = ball_entity; 
-	}
-}
 
 
 
-void init_game(entt::registry& main_registry, EntityDatabase& db)
+
+void init_game(entt::registry& main_registry, EntityDatabase& db, int levelNumber)
 {
 	//initialize player
 	auto player_entity = main_registry.create();
@@ -653,14 +536,25 @@ void init_game(entt::registry& main_registry, EntityDatabase& db)
 
 	apply_template("PLAYER", db, main_registry, player_entity);
 	main_registry.assign<PlayerInputComponent>(player_entity);
-	main_registry.assign<SpriteLocation>(player_entity, 0.0f, 0.0f);
+	main_registry.assign<SpriteLocation>(player_entity, 0.0f, 50.0f);
 	main_registry.assign<Editable>(player_entity, "player");
 	//initialize boss
 	auto boss_entity = main_registry.create();
 	main_registry.assign<SpriteLocation>(boss_entity, 0.0f, 700.0f);
 
-	apply_template("BOSS_01", db, main_registry, boss_entity);
-	main_registry.assign<Editable>(boss_entity, "boss");
+	switch (levelNumber) {
+	case 1:
+        apply_template("BOSS_01", db, main_registry, boss_entity);
+        main_registry.assign<Editable>(boss_entity, "boss");
+		break;
+
+	case 2:
+        apply_template("BOSS_02", db, main_registry, boss_entity);
+        main_registry.assign<Editable>(boss_entity, "boss");
+		break;
+	}
+
+	
 }
 
 void process_boss_AI(entt::registry &registry, float deltaTime)
@@ -679,6 +573,13 @@ void process_boss_AI(entt::registry &registry, float deltaTime)
 				boss->init(&registry, et);
 
 				registry.assign<BossAI>(et,std::move( boss));
+			}
+			else if (bossname.compare("AI_BOSS_02") == 0)
+			{
+                std::unique_ptr<BOSS_02> boss = std::make_unique<BOSS_02>();
+                boss->init(&registry, et);
+
+                registry.assign<BossAI>(et, std::move(boss));
 			}
 		}
 		//tick AI
@@ -712,7 +613,7 @@ int main(int argc, char* argv[])
 	EntityDatabase& db = main_registry.ctx<EntityDatabase>();
 	create_default_templates(db);
 
-	init_game(main_registry, db);
+	//init_game(main_registry, db);
 
 	
 
@@ -737,6 +638,9 @@ int main(int argc, char* argv[])
 	SDL_Event e;
 	//While application is running
 	main_registry.set<EngineGlobalData>();
+
+	main_registry.ctx<EngineGlobalData>().levelRequest = 1;
+
 	auto start = std::chrono::system_clock::now();
 	auto end = std::chrono::system_clock::now();
 	bool wants_reset = false;
@@ -753,7 +657,10 @@ int main(int argc, char* argv[])
 		
 		start_frame(main_registry);
 
-		auto player_entity = main_registry.view<PlayerInputComponent>().data()[0];
+		entt::entity player_entity{ 0 };
+        for (auto et : main_registry.view<PlayerInputComponent>()) {
+			player_entity = et;
+        }
 
 		entt::entity boss{0};
         for (auto et : main_registry.view<BossAI, Health>()) {
@@ -860,16 +767,25 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
-
+		int levelRequest = main_registry.ctx<EngineGlobalData>().levelRequest;
 		if (wants_reset) {
 
-			auto bulletview2 = main_registry.view<GameEntity>();
-			for (auto e : bulletview2) {
-				main_registry.destroy(e);
-			}
-			init_game(main_registry, db);
-			wants_reset = false;
-			gametime = 0;
+			levelRequest = main_registry.ctx<EngineGlobalData>().currentLevel;
+		}
+
+		
+		if (levelRequest > 0) {
+            auto bulletview2 = main_registry.view<GameEntity>();
+            for (auto e : bulletview2) {
+                main_registry.destroy(e);
+            }
+            init_game(main_registry, db, levelRequest);
+            wants_reset = false;
+            gametime = 0;
+
+			main_registry.ctx<EngineGlobalData>().currentLevel = levelRequest;
+			main_registry.ctx<EngineGlobalData>().levelRequest = -1;
+			
 		}
 
 		float deltaTime = main_registry.ctx<EngineGlobalData>().deltaTime * main_registry.ctx<EngineGlobalData>().timeDilation;
