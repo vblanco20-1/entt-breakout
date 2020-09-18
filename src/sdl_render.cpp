@@ -75,18 +75,21 @@ void draw_ui(entt::registry& registry)
 	if (ImGui::Button("2", { 50,50 })) {
 		dty.levelRequest = 2;
 	}
+    ImGui::SameLine();
+    if (ImGui::Button("3", { 50,50 })) {
+        dty.levelRequest = 3;
+    }
 	ImGui::End();
-
 
 	
 
     ImGui::Begin("Test");
-    
-	ImGui::Text("DeltaTime: %f ms", dty.deltaTime * 1000.f);
-	ImGui::SliderFloat("Time dilation", &dty.timeDilation, 0, 10);
-	ImGui::Separator();
 
-	display_editor(registry);
+    ImGui::Text("DeltaTime: %f ms", dty.deltaTime * 1000.f);
+    ImGui::SliderFloat("Time dilation", &dty.timeDilation, 0, 10);
+    ImGui::Separator();
+
+    display_editor(registry);
     ImGui::End();
 }
 

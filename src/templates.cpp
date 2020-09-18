@@ -98,6 +98,34 @@ void create_default_templates(EntityDatabase& db) {
         db.templateMap["BOSS_02"] = boss_entity;
     }
 
+    //boss 3
+    {
+        //initialize boss
+        auto boss_entity = registry.create();
+        registry.assign<SDL_RenderSprite>(boss_entity);
+        registry.assign<BossMovementComponent>(boss_entity);
+        registry.assign<SphereCollider>(boss_entity);
+        registry.assign<RenderScale>(boss_entity, Vec2f{ 4.0f,4.0f });
+        registry.assign<Health>(boss_entity, Health{ 500,500 });
+        //registry.assign<Health>(boss_entity, Health{ 50,50 });
+        load_sprite("../assets/sprites/element_green_polygon_glossy.png", registry.get<SDL_RenderSprite>(boss_entity));
+        BossMovementComponent& bmov = registry.get<BossMovementComponent>(boss_entity);
+
+        registry.get<SphereCollider>(boss_entity).radius = 70;
+
+        registry.get<SDL_RenderSprite>(boss_entity).sortlayer = -1000;
+
+        bmov.center.x = 0;
+        bmov.center.y = 700.f;
+        bmov.period = 0.3;
+
+        registry.assign<BossAIName>(boss_entity, "AI_BOSS_03");
+
+
+        registry.assign<BulletSpawner>(boss_entity);
+
+        db.templateMap["BOSS_03"] = boss_entity;
+    }
     //player bullet
 
     {
@@ -160,5 +188,26 @@ void create_default_templates(EntityDatabase& db) {
 
 
         db.templateMap["BULLET_BOSS_02"] = ball_entity;
+    }
+
+    {
+        //ball
+        auto ball_entity = registry.create();
+        registry.assign<SDL_RenderSprite>(ball_entity);
+        registry.assign<Bullet>(ball_entity);
+        registry.assign<RenderScale>(ball_entity, Vec2f{ 1.5f,1.5f });
+        registry.assign<MovementComponent>(ball_entity);
+        load_sprite("../assets/sprites/element_purple_diamond.png", registry.get<SDL_RenderSprite>(ball_entity));
+        registry.assign<SphereCollider>(ball_entity);
+
+        registry.get<SphereCollider>(ball_entity).radius = 15;
+
+        registry.get<Bullet>(ball_entity).bHitBoss = false;
+        registry.get<Bullet>(ball_entity).bHitPlayer = true;
+
+        registry.get<SDL_RenderSprite>(ball_entity).sortlayer = 200;
+        //registry.assign()<
+
+        db.templateMap["BULLET_BOSS_03"] = ball_entity;
     }
 }

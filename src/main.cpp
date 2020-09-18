@@ -552,6 +552,10 @@ void init_game(entt::registry& main_registry, EntityDatabase& db, int levelNumbe
         apply_template("BOSS_02", db, main_registry, boss_entity);
         main_registry.assign<Editable>(boss_entity, "boss");
 		break;
+    case 3:
+        apply_template("BOSS_03", db, main_registry, boss_entity);
+        main_registry.assign<Editable>(boss_entity, "boss");
+        break;
 	}
 
 	
@@ -581,6 +585,13 @@ void process_boss_AI(entt::registry &registry, float deltaTime)
 
                 registry.assign<BossAI>(et, std::move(boss));
 			}
+            else if (bossname.compare("AI_BOSS_03") == 0)
+            {
+                std::unique_ptr<BOSS_03> boss = std::make_unique<BOSS_03>();
+                boss->init(&registry, et);
+
+                registry.assign<BossAI>(et, std::move(boss));
+            }
 		}
 		//tick AI
 		if (registry.has<BossAI>(et))
